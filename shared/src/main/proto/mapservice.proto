@@ -1,0 +1,142 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+package mapservice;
+option java_package = "api.geolocation";
+option java_multiple_files = true;
+option java_outer_classname = "CommunicationServiceProto";
+option java_generic_services = true;
+
+service CommunicationService{
+  rpc getAmenities(AmenitiesRequest) returns(AmenitiesResponse);
+  rpc getAmenityById(AmenityByIdRequest) returns (AmenityResponse);
+  rpc getRoads(RoadsRequest) returns (RoadsResponse);
+  rpc getRoadById(RoadByIdRequest) returns (RoadResponse);
+  rpc getTile(TileRequest) returns (TileResponse);
+  rpc getUsage(UsageRequest) returns (UsageResponse);
+  rpc getRoute(RouteRequest) returns (RouteResponse);
+}
+
+message TileRequest {
+  int32 z = 1;
+  int32 x = 2;
+  int32 y = 3;
+  string layers = 4;
+}
+
+message TileResponse {
+  Status status = 1;
+  bytes png = 2;
+}
+
+message AmenityByIdRequest{
+  int64 id = 1;
+}
+
+message AmenitiesRequest{
+  string amenity = 1;
+  double bboxTlX = 2;
+  double bboxTlY = 3;
+  double bboxBrX = 4;
+  double bboxBrY = 5;
+  double pointX = 6;
+  double pointY = 7;
+  double pointD = 8;
+  int32 take = 9;
+  int32 skip = 10;
+}
+
+message AmenityResponse{
+  Status status = 1;
+  int64 id = 2;
+  string json = 3;
+  map<string, string> tags = 4;
+  string type = 5;
+  string name = 6;
+}
+
+message RoadByIdRequest{
+  int64 id = 1;
+}
+
+message RoadsRequest{
+  string road = 1;
+  double bboxTlX = 2;
+  double bboxTlY = 3;
+  double bboxBrX = 4;
+  double bboxBrY = 5;
+  int32 take = 6;
+  int32 skip = 7;
+}
+
+message RoadResponse{
+  Status status = 1;
+  int64 id = 2;
+  string json = 3;
+  map<string, string> tags = 4;
+  string type = 5;
+  string name = 6;
+  repeated int64 childIds = 7;
+}
+
+message RoadsResponse {
+  Status status = 1;
+  repeated Road roads = 2;
+}
+
+message AmenitiesResponse {
+  Status status = 1;
+  repeated Amenity amenities = 2;
+}
+
+message Amenity {
+  int64 id = 1;
+  string json = 2;
+  map<string, string> tags = 3;
+  string type = 4;
+  string name = 5;
+}
+
+message Road {
+  int64 id = 1;
+  string json = 2;
+  map<string, string> tags = 3;
+  string type = 4;
+  string name = 5;
+  repeated int64 childIds = 6;
+}
+
+message UsageRequest {
+  double bboxTlX = 1;
+  double bboxTlY = 2;
+  double bboxBrX = 3;
+  double bboxBrY = 4;
+}
+
+message UsageResponse {
+  double area = 1;
+  repeated Usage usages = 2;
+}
+
+message Usage {
+  string type = 1;
+  double share = 2;
+  double area = 3;
+}
+
+message RouteRequest {
+  int64 from = 1;
+  int64 to = 2;
+  string weighting = 3;
+}
+
+message RouteResponse {
+  double length = 1;
+  double time = 2;
+  repeated Road roads = 3;
+}
+
+enum Status {
+  Success = 0;
+  NotFound = 1;
+  InternalError = 2;
+}

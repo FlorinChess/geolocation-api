@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Frontend</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        body {
+            background-color: #f1f1f1;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+
+        #content {
+            width: 80%;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+
+        }
+
+        #wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #map {
+            height: 50vh;
+            width: 100%;
+            margin: 5px;
+        }
+
+        #panel {
+            width: 100%;
+            margin: 7px;
+            border-top: 2px solid #979797;
+        }
+
+        td {
+            border-bottom: 1px solid black;
+        }
+
+        th {
+            border-bottom: 2px solid black;
+        }
+
+        .routemarker {
+            filter: hue-rotate(-40deg)
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+
+        <div id="content">
+            <h1>OOP2 Mapping Demo</h1>
+            <div id="map"></div>
+            <div id="panel">
+                <h3>Data Loading</h3>
+                <div>
+
+                    <h4>Amenities</h4>
+                    <label for="type">Type:</label>
+                    <input name="type_amenities" value="">
+                    <button type="button" onclick="load_amenities()">Load</button><br>
+                    <div class="data">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>id</th>
+                                    <th>name</th>
+                                    <th>type</th>
+                                    <th>geom</th>
+                                </tr>
+                            </thead>
+                            <tbody id="amenities_table">
+                            </tbody>
+                        </table>
+                        <button onclick="more_amenities()">More</button>
+                    </div>
+                </div>
+                <div>
+                    <h4>Roads</h4>
+                    <label for="type">Type:</label>
+                    <input name="type_roads" value="">
+                    <button type="button" onclick="load_roads()">Load</button><br>
+                    <div class="data">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>id</th>
+                                    <th>name</th>
+                                    <th>type</th>
+                                    <th>geom</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="roads_table">
+                            </tbody>
+                        </table>
+                        <button onclick="more_roads()">More</button>
+                    </div>
+                </div>
+            </div>
+            <div id="panel">
+                <h3>Routing</h3>
+                <button type="button" onclick="route()">Calculate Route</button>
+                <button type="button" onclick="clear_route()">Clear</button>
+                <br>
+                <label for="weighting">Weighting</label>
+                <br>
+                <select name="layers" id="weighting">
+                    <option value="time" selected>Time</option>
+                    <option value="length">Length</option>
+                </select>
+                <br>
+                <div id="route_results">
+
+                </div>
+            </div>
+
+            <div id="panel">
+                <h3>Landuse</h3>
+                <button type="button" onclick="landuse()">Calculate Landuse</button>
+                <br>
+
+                <div id="landuse_results">
+
+                </div>
+                <div class="data">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>type</th>
+                                <th>area</th>
+                                <th>share</th>
+                            </tr>
+                        </thead>
+                        <tbody id="landuse_table">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="panel">
+                <h3>Settings</h3>
+                <form action="">
+                    <label for="base_url">Base URL: </label>
+                    <br>
+                    <input type="text" name="base_url" id="base_url" value="http://localhost:8010">
+                    <br>
+                    <label for="layers">Layers</label>
+                    <br>
+                    <select name="layers" id="layers" multiple>
+                        <option value="water" selected>Water</option>
+                        <option value="railway" selected>Railway</option>
+                        <option value="grass" selected>Grass</option>
+                        <option value="residential" selected>Residential</option>
+                        <option value="vineyard" selected>Vineyard</option>
+                        <option value="forest" selected>Forest</option>
+                        <option value="restaurant" selected>Restaurant</option>
+                        <option value="parking" selected>Parking</option>
+                        <option value="road" selected>Road</option>
+                        <option value="secondary" selected>Secondary</option>
+                        <option value="primary" selected>Primary</option>
+                        <option value="trunk" selected>Trunk</option>
+                        <option value="motorway" selected>Motorway</option>
+                    </select>
+                    <br>
+                    <button type="button" onclick="rebuild_layer()">Apply</button>
+                </form>
+            </div>
+            <div id="panel">
+                <h3>Help</h3>
+                This tool should help you to debug, understand and identifiy possible mistakes in your
+                implementation.
+                Feel free to change, add or remove code!
+                Tipps if it fails even though you think it should work:
+                <ul>
+                    <li>Check, whether you are sending the proper CORS headers</li>
+                    <li>Check, whether your followed the structure of the response completely!</li>
+                    <li>Check your coordinate transformations if the map seems off</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script>
+        let map = L.map('map').setView([47.07, 15.43], 12);
+        let current_tile_layer = null
+        let limit = 10
+        let geojson_layers = {
+            amenities: null,
+            roads: null
+        }
+        let paging_info = {
+            amenities: 0,
+            roads: 0
+        }
+        let route_info = {
+            route: {
+                path: null
+            },
+            from: {
+                id: null,
+                marker: null
+            },
+            to: {
+                id: null,
+                marker: null
+            }
+        }
+        let from_id = null
+        let to_id = null
+        
+        let landuse_results={}
+
+        function rebuild_layer() {
+            let selected_layers = document.getElementById('layers').selectedOptions
+            let layers = []
+            for (let i = 0; i < selected_layers.length; i++) {
+                layers.push(selected_layers[i].value)
+            }
+            console.log(layers)
+            let base_url = document.getElementById('base_url').value
+            if (current_tile_layer != null) {
+                map.removeLayer(current_tile_layer)
+            }
+            let url = base_url + '/tile/{z}/{x}/{y}.png?layers=' + layers.join(',')
+            current_tile_layer = L.tileLayer(url, {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/">OpenStreetMap</a>'
+            }).addTo(map);
+        }
+        function getBBox() {
+            let bounds = map.getBounds()
+            let bbox = {
+                'bbox.tl.x': bounds.getWest(),
+                'bbox.tl.y': bounds.getNorth(),
+                'bbox.br.x': bounds.getEast(),
+                'bbox.br.y': bounds.getSouth(),
+            }
+            return bbox
+        }
+        function shorten(text, limit = 100) {
+            if (text.length > limit) {
+                return text.substring(0, limit) + '...'
+            }
+            return text
+        }
+        function load(kind, kind_singular, offset = 0) {
+            if (offset == 0) {
+                paging_info[kind] = 0
+                if (geojson_layers[kind] != null) {
+                    map.removeLayer(geojson_layers[kind])
+                    geojson_layers[kind] = null
+                }
+            }
+            let type = document.getElementsByName(`type_${kind}`)[0].value
+            let base_url = document.getElementById('base_url').value
+            let params = { take: limit, ...getBBox(), skip: offset }
+            params[`${kind_singular}`] = type
+            let url = `${base_url}/${kind}?${new URLSearchParams(params)}`
+            fetch(url).then(response => response.json()).then(data => {
+                let entries = data.entries
+                let geojson_data = entries.map(e => { return { properties: { name: e.name }, ...e.geom } })
+                if (geojson_layers[kind] == null) {
+                    geojson_layers[kind] = L.geoJSON(geojson_data, {
+                        style: function (feature) {
+                            return {
+                                color: 'red',
+                                weight: 3,
+                                opacity: 0.5,
+                                fillOpacity: 0.5
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            layer.bindPopup(feature.properties.name);
+                        }
+                    }).addTo(map);
+                } else {
+                    geojson_layers[kind].addData(geojson_data)
+                }
+                let table = document.getElementById(`${kind}_table`)
+                if (offset == 0) {
+                    table.innerHTML = ''
+                }
+                for (let i = 0; i < entries.length; i++) {
+                    let row = document.createElement('tr')
+                    let id = document.createElement('td')
+                    id.innerText = entries[i].id
+                    let name = document.createElement('td')
+                    name.innerText = entries[i].name
+                    let type = document.createElement('td')
+                    type.innerText = entries[i].type
+                    let geom = document.createElement('td')
+                    geom.innerText = shorten(JSON.stringify(entries[i].geom))
+                    row.appendChild(id)
+                    row.appendChild(name)
+                    row.appendChild(type)
+                    row.appendChild(geom)
+                    table.appendChild(row)
+                    if (kind == "roads") {
+                        let from_btn = document.createElement('button')
+                        from_btn.innerText = "From"
+                        from_btn.onclick = function () {
+                            route_info.from.id = entries[i].child_ids[0]
+                            if (route_info.from.marker != null) {
+                                map.removeLayer(route_info.from.marker)
+                            }
+                            route_info.from.marker = L.marker(entries[i].geom.coordinates[0].reverse()).addTo(map);
+                            // route_info.from.marker._icon.classList.add("routemarker");
+
+                        }
+                        let to_btn = document.createElement('button')
+                        to_btn.innerText = "To"
+                        to_btn.onclick = function () {
+                            route_info.to.id = entries[i].child_ids[0]
+                            if (route_info.to.marker != null) {
+                                map.removeLayer(route_info.to.marker)
+                            }
+                            route_info.to.marker = L.marker(entries[i].geom.coordinates[0].reverse()).addTo(map);
+                            // route_info.to.marker._icon.classList.add("routemarker");
+                        }
+                        let btn_td = document.createElement('td')
+                        btn_td.appendChild(from_btn)
+                        btn_td.appendChild(to_btn)
+                        row.appendChild(btn_td)
+                    }
+                }
+                paging_info[kind] += entries.length
+            })
+
+        }
+        function load_amenities() {
+            load('amenities', 'amenity')
+        }
+        function load_roads() {
+            load('roads', 'road')
+        }
+        function more(kind, kind_singular) {
+            load(kind, kind_singular, paging_info[kind])
+        }
+        function more_amenities() {
+            more('amenities', 'amenity')
+        }
+        function more_roads() {
+            more('roads', 'road')
+        }
+        function route() {
+            if (route_info.from.id == null || route_info.to.id == null) {
+                alert("Please select a start and end point!")
+                return
+            }
+            let base_url = document.getElementById('base_url').value
+            let url = `${base_url}/route?${new URLSearchParams({
+                from: route_info.from.id,
+                to: route_info.to.id,
+                weighting: document.getElementById('weighting').value
+            })}`
+            fetch(url).then(resp => resp.json()).then(data => {
+                if (!data.roads) {
+                    alert("No route found: " + data.message)
+                    return
+                }
+                let geometries = data.roads.map(e => { return { properties: { name: e.name }, ...e.geom } })
+
+                if (route_info.route.path != null) {
+                    map.removeLayer(route_info.route.path)
+                }
+                route_info.route.path = L.geoJSON(geometries, {
+                    style: function (feature) {
+                        return {
+                            color: 'green',
+                            weight: 3,
+                            opacity: 0.9,
+                            fillOpacity: 0.9
+                        };
+                    },
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup(feature.properties.name);
+                    }
+                }).addTo(map);
+
+                let infobox = document.getElementById('route_results')
+                infobox.innerHTML = ''
+                infobox.appendChild(document.createTextNode(`Distance: ${data.length}, \nTime: ${data.time}`))
+
+            })
+
+        }
+        function clear_route(){
+            if (route_info.route.path != null) {
+                map.removeLayer(route_info.route.path)
+            }
+            if (route_info.from.marker != null) {
+                map.removeLayer(route_info.from.marker)
+            }
+            if (route_info.to.marker != null) {
+                map.removeLayer(route_info.to.marker)
+            }
+            route_info.from.id = null
+            route_info.to.id = null
+            route_info.from.marker = null
+            route_info.to.marker = null
+            route_info.route.path = null
+            document.getElementById('route_results').innerHTML = ''
+        }
+        function landuse() {
+            let base_url = document.getElementById('base_url').value
+            let url = `${base_url}/usage?${new URLSearchParams(getBBox())}`
+            fetch(url).then(resp => resp.json()).then(data => {
+ 
+                let infobox = document.getElementById('landuse_results')
+                infobox.innerHTML = ''
+                infobox.appendChild(document.createTextNode(`Total area: ${data.area}`))
+                let table = document.getElementById(`landuse_table`)
+                table.innerHTML = ''
+                for (let i = 0; i < data.usages.length; i++) {
+                    let row = document.createElement('tr')
+                    let type = document.createElement('td')
+                    type.innerText = data.usages[i].type
+                    let area = document.createElement('td')
+                    area.innerText = data.usages[i].area
+                    let share = document.createElement('td')
+                    share.innerText = data.usages[i].share
+                    row.appendChild(type)
+                    row.appendChild(area)
+                    row.appendChild(share)
+                    table.appendChild(row)
+                }
+            })
+        }
+        
+        rebuild_layer()
+
+    </script>
+</body>
+
+</html>
