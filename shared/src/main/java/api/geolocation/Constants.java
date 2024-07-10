@@ -7,4 +7,5 @@ public class Constants {
     public static final String defaultBackendTarget = "localhost:8020";
     public static final String defaultBackendPort = "8020";
     public static final String defaultBackendOsmFile = "data/styria_reduced.osm";
+    public static final String badRequestPointValidCoordinatesInvalid = "Bad request: bbox provided, but coordinates are invalid.";
 }

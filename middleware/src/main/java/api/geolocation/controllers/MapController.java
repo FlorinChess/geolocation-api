@@ -44,7 +44,7 @@ public class MapController {
             if (bboxTlX != null && bboxTlY != null && bboxBrX != null && bboxBrY != null) {
                 if (!latitudeIsValid(bboxTlX) || !longitudeIsValid(bboxTlY) ||
                     !latitudeIsValid(bboxBrX) || !longitudeIsValid(bboxBrY)) {
-                    throw new InvalidRequestException("Bad request: bbox provided, but coordinates are invalid.");
+                    throw new InvalidRequestException(Constants.badRequestPointValidCoordinatesInvalid);
                 }
 
                 if (pointX != null || pointY != null || pointD != null)
@@ -121,7 +121,6 @@ public class MapController {
     public ResponseEntity<Object> getAmenitiesById(@PathVariable Long id) {
         try {
             api.geolocation.datamodels.Amenity amenity = loadAmenityById(id);
-
 
             return ResponseEntity.ok(amenity);
         }
