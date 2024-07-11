@@ -1,4 +1,4 @@
-package api.geolocation.error;
+package api.geolocation.exceptions;
 
 import lombok.Data;
 

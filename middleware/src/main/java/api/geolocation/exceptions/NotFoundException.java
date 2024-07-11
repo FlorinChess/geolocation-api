@@ -1,4 +1,4 @@
-package api.geolocation.error;
+package api.geolocation.exceptions;
 
 public class NotFoundException extends RuntimeException {
     public NotFoundException(String message) {
