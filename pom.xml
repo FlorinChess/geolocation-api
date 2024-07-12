@@ -11,7 +11,7 @@
 
     <properties>
         <javaVersion>17</javaVersion>
-        <protobuf.version>3.17.3</protobuf.version>
+        <protobuf.version>4.26.2</protobuf.version>
         <grpc.version>1.56.1</grpc.version>
         <gt.version>29.1</gt.version>
     </properties>
@@ -112,6 +112,10 @@
         <repository>
             <id>org.geotools</id>
             <url>https://repo.osgeo.org/repository/release/</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
         </repository>
     </repositories>
 
