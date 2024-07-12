@@ -48,36 +48,16 @@ public class MapRenderer {
 
         String[] layersArray = layers.split(",");
 
-        List<Way> Roads = waysMap.values().stream().filter(way -> {
-            if (way.tags.containsKey("highway")) {
-                return true;
-            }
-            return false;
-        }).toList();
+        List<Way> roads = waysMap.values().stream().filter(way -> way.tags.containsKey("highway")).toList();
 
-        List<Relation> Lands = relationsMap.values().stream().filter(relation -> {
-            if (relation.tags.containsKey("landuse")){
-                return true;
-            }
-            return false;
-        }).toList();
+        List<Relation> landRelations = relationsMap.values().stream().filter(relation -> relation.tags.containsKey("landuse")).toList();
 
-        List<Relation> waterRel = relationsMap.values().stream().filter(relation -> {
-            if (relation.tags.containsKey("water")){
-                return true;
-            }
-            return false;
-        }).toList();
+        List<Relation> waterRelations = relationsMap.values().stream().filter(relation -> relation.tags.containsKey("water")).toList();
 
-        List<Way> waterWae = waysMap.values().stream().filter(way -> {
-            if (way.tags.containsKey("water")){
-                return true;
-            }
-            return false;
-        }).toList();
+        List<Way> waterWae = waysMap.values().stream().filter(way -> way.tags.containsKey("water")).toList();
 
         for (String layer : layersArray) {
-            List<Way> selectedRoads = Roads.stream().filter(way -> {
+            List<Way> selectedRoads = roads.stream().filter(way -> {
                 if (way.tags.get("highway").equals(layer) || (!(isRoad(way.tags.get("highway"))) && layer.equals("road"))){
                     return true;
                 }
@@ -89,30 +69,25 @@ public class MapRenderer {
                 drawRoadSPlural(selectedRoads, giveColor(layer), g);
             }
 
-            List<Relation> selectedRelation = Lands.stream().filter(relation -> {
-                if (relation.tags.get("landuse").equals(layer)){
-                    return true;
-                }
-                return false;
-            }).toList();
+            List<Relation> selectedRelation = landRelations.stream().filter(relation -> relation.tags.get("landuse").equals(layer)).toList();
             drawLandSPlural(selectedRelation, giveColor(layer), g);
 
             if (layer.equals("water")){
-                drawLandSPlural(waterRel, giveColor(layer), g);
+                drawLandSPlural(waterRelations, giveColor(layer), g);
                 drawRoadSPlural(waterWae, giveColor(layer), g);
             }
         }
 
         image = flipImagCounterclockwise(image);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", baos);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", outputStream);
         //return baos.toByteArray();
         return image;
     }
 
-    public Color giveColor(String type){
-        Color color = Color.PINK;
+    public Color giveColor(String type) {
+        Color color = Color.WHITE;
         switch (type) {
             case "motorway":
                 color = new Color(255,0,0);
@@ -148,13 +123,12 @@ public class MapRenderer {
                 color = new Color(0,128,255);
                 break;
             default:
-                // n o t h i n g
                 break;
         }
         return color;
     }
 
-    public boolean isRoad(String type){
+    public boolean isRoad(String type) {
         boolean state = false;
         switch (type) {
             case "motorway":
@@ -165,7 +139,6 @@ public class MapRenderer {
                 state = true;
                 break;
             default:
-                // n o t h i n g
                 break;
         }
         return state;
@@ -188,24 +161,24 @@ public class MapRenderer {
         return bb;
     }
 
-    static double tile2lon(int x, int z){
+    static double tile2lon(int x, int z) {
         return x/Math.pow(2.0, z) * 360 - 180;
     }
 
-    static double tile2lat(int y, int z){
+    static double tile2lat(int y, int z) {
         double calc = Math.PI - (2.0 * Math.PI * y) / Math.pow(2.0, z);
         return Math.toDegrees(Math.atan(Math.sinh(calc)));
     }
 
-    int transLat(double lat){
+    int transLat(double lat) {
         return (int)(((lat - min_lat) / (max_lat - min_lat)) * tileSize);
     }
 
-    int transLon(double lon){
+    int transLon(double lon) {
         return (int)(((lon - min_lon) / (max_lon - min_lon)) * tileSize);
     }
 
-    private void drawRoad(List<Node> ways, Color color, Graphics2D g){
+    private void drawRoad(List<Node> ways, Color color, Graphics2D g) {
         Coordinate start_coord = null;
         Coordinate start_coord2 = null;
         Coordinate last_coord = null;
@@ -229,12 +202,12 @@ public class MapRenderer {
 
         for (Node way : ways){
             if (way != null) {
-                Coordinate coord = new Coordinate(transLat(way.lat), transLon(way.lon));
+                Coordinate coordinate = new Coordinate(transLat(way.lat), transLon(way.lon));
                 if (start_coord != null) {
                     g.setColor(color);
-                    g.drawLine((int) start_coord.x, (int) start_coord.y, (int) coord.x, (int) coord.y);
+                    g.drawLine((int) start_coord.x, (int) start_coord.y, (int) coordinate.x, (int) coordinate.y);
                 }
-                start_coord = coord;
+                start_coord = coordinate;
             }
         }
     }
@@ -322,7 +295,7 @@ public class MapRenderer {
         }
     }
 
-    private Polygon transPolygon(org.locationtech.jts.geom.Polygon badPolygon){
+    private Polygon transPolygon(org.locationtech.jts.geom.Polygon badPolygon) {
         int[] x = new int[badPolygon.getNumPoints()];
         int[] y = new int[badPolygon.getNumPoints()];
 
@@ -333,14 +306,14 @@ public class MapRenderer {
         return new Polygon(y, x, badPolygon.getNumPoints());
     }
 
-    public BufferedImage flipImagCounterclockwise(BufferedImage flipped){
+    public BufferedImage flipImagCounterclockwise(BufferedImage flipped) {
         for (int i = 0; i < 3; i++){
             flipped = flipImag(flipped);
         }
         return flipped;
     }
 
-    public BufferedImage flipImag(BufferedImage imag){
+    public BufferedImage flipImag(BufferedImage imag) {
         int width = tileSize;
         int height = tileSize;
 
@@ -350,7 +323,6 @@ public class MapRenderer {
         AffineTransform transform = new AffineTransform();
         transform.translate(height, 0);
         transform.rotate(Math.toRadians(90));
-        // i swear i know it should be -90 but it blackens out the whole thing
 
         g2.setTransform(transform);
         g2.drawImage(imag, 0, 0, null);
