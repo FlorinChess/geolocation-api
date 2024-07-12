@@ -6,11 +6,11 @@ import api.geolocation.datamodels.Usage;
 import api.geolocation.datamodels.UsageResponse;
 import api.geolocation.datamodels.PaginatedResult;
 import api.geolocation.datamodels.Paging;
-import api.geolocation.exceptions.ErrorResponse;
 import api.geolocation.exceptions.InternalIssuesException;
 import api.geolocation.exceptions.InvalidRequestException;
 import api.geolocation.exceptions.NotFoundException;
 import com.google.protobuf.ByteString;
+import lombok.SneakyThrows;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +28,7 @@ import java.util.List;
 
 @RestController
 public class MapController {
+    @SneakyThrows
     @GetMapping( "/amenities" )
     public ResponseEntity<Object> getAmenities(
         @RequestParam(required = false) String amenity,
@@ -40,100 +41,77 @@ public class MapController {
         @RequestParam(required = false, name = "point.d") Double pointD,
         @RequestParam(defaultValue = "50") int take,
         @RequestParam(defaultValue = "0") int skip) {
-        try {
-            if (bboxTlX != null && bboxTlY != null && bboxBrX != null && bboxBrY != null) {
-                if (!latitudeIsValid(bboxTlX) || !longitudeIsValid(bboxTlY) ||
-                    !latitudeIsValid(bboxBrX) || !longitudeIsValid(bboxBrY)) {
-                    throw new InvalidRequestException(Constants.badRequestPointValidCoordinatesInvalid);
-                }
-
-                if (pointX != null || pointY != null || pointD != null)
-                {
-                    throw new InvalidRequestException("Bad request: bbox provided, but point parameters also provided.");
-                }
-
-                var amenities = loadAmenitiesByBoundingBox(amenity, bboxTlX, bboxTlY, bboxBrX, bboxBrY, take, skip);
-                amenities.sort(Comparator.comparingLong(api.geolocation.datamodels.Amenity::getId));
-
-                List<api.geolocation.datamodels.Amenity> toReturn = new ArrayList<>();
-
-                if (!amenities.isEmpty()) {
-                    for (int i = 0; i < take; i++) {
-                        toReturn.add(amenities.get(i));
-                    }
-                }
-                var response = new PaginatedResult<api.geolocation.datamodels.Amenity>(new Paging(skip, take, amenities.size()));
-                response.setEntries(toReturn);
-
-                return ResponseEntity.ok(response);
+        if (bboxTlX != null && bboxTlY != null && bboxBrX != null && bboxBrY != null) {
+            if (!latitudeIsValid(bboxTlX) || !longitudeIsValid(bboxTlY) ||
+                !latitudeIsValid(bboxBrX) || !longitudeIsValid(bboxBrY)) {
+                throw new InvalidRequestException(Constants.badRequestPointValidCoordinatesInvalid);
             }
 
-            if (pointX != null && pointY != null && pointD != null) {
-                if (!latitudeIsValid(pointX) || !longitudeIsValid(pointY) || pointD < 0) {
-                    throw new InvalidRequestException("Bad request: point provided, but coordinates are invalid.");
-                }
-
-                if (bboxBrX != null || bboxBrY != null || bboxTlX != null || bboxTlY != null) {
-                    throw new InvalidRequestException("Bad request: point provided, but bbox parameters also provided.");
-                }
-
-                var amenities = loadAmenitiesByPoint(amenity, pointX, pointY, pointD, take, skip);
-                amenities.sort(Comparator.comparingLong(api.geolocation.datamodels.Amenity::getId));
-
-                List<api.geolocation.datamodels.Amenity> toReturn = new ArrayList<>();
-
-                if((take < 0) || (skip < 0)){
-                    throw new InternalIssuesException("Take < 0!");
-                }
-
-                if (!amenities.isEmpty())
-                {
-                    for (int i = skip; i < (take + skip); i++) {
-                        if(i >= amenities.size()){
-                            break;
-                        }
-                        toReturn.add(amenities.get(i));
-                    }
-                }
-
-
-                var response = new PaginatedResult<api.geolocation.datamodels.Amenity>(new Paging(skip, take, amenities.size()));
-                response.setEntries(toReturn);
-
-                return ResponseEntity.ok(response);
+            if (pointX != null || pointY != null || pointD != null)
+            {
+                throw new InvalidRequestException("Bad request: bbox provided, but point parameters also provided.");
             }
 
-            throw new InvalidRequestException("Bad request: neither bbox nor point parameters provided.");
+            var amenities = loadAmenitiesByBoundingBox(amenity, bboxTlX, bboxTlY, bboxBrX, bboxBrY, take, skip);
+            amenities.sort(Comparator.comparingLong(api.geolocation.datamodels.Amenity::getId));
+
+            List<api.geolocation.datamodels.Amenity> toReturn = new ArrayList<>();
+
+            if (!amenities.isEmpty()) {
+                for (int i = 0; i < take; i++) {
+                    toReturn.add(amenities.get(i));
+                }
+            }
+            var response = new PaginatedResult<api.geolocation.datamodels.Amenity>(new Paging(skip, take, amenities.size()));
+            response.setEntries(toReturn);
+
+            return ResponseEntity.ok(response);
         }
-        catch (NotFoundException exception) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(exception.getMessage()));
+
+        if (pointX != null && pointY != null && pointD != null) {
+            if (!latitudeIsValid(pointX) || !longitudeIsValid(pointY) || pointD < 0) {
+                throw new InvalidRequestException("Bad request: point provided, but coordinates are invalid.");
+            }
+
+            if (bboxBrX != null || bboxBrY != null || bboxTlX != null || bboxTlY != null) {
+                throw new InvalidRequestException("Bad request: point provided, but bbox parameters also provided.");
+            }
+
+            var amenities = loadAmenitiesByPoint(amenity, pointX, pointY, pointD, take, skip);
+            amenities.sort(Comparator.comparingLong(api.geolocation.datamodels.Amenity::getId));
+
+            List<api.geolocation.datamodels.Amenity> toReturn = new ArrayList<>();
+
+            if((take < 0) || (skip < 0)){
+                throw new InternalIssuesException("Take < 0!");
+            }
+
+            if (!amenities.isEmpty())
+            {
+                for (int i = skip; i < (take + skip); i++) {
+                    if(i >= amenities.size()){
+                        break;
+                    }
+                    toReturn.add(amenities.get(i));
+                }
+            }
+
+
+            var response = new PaginatedResult<api.geolocation.datamodels.Amenity>(new Paging(skip, take, amenities.size()));
+            response.setEntries(toReturn);
+
+            return ResponseEntity.ok(response);
         }
-        catch (InvalidRequestException exception){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (Exception exception){
-            exception.printStackTrace(System.out);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(exception.getMessage()));
-        }
+
+        throw new InvalidRequestException("Bad request: neither bbox nor point parameters provided.");
     }
 
+    @SneakyThrows
     @GetMapping("/amenities/{id}")
     public ResponseEntity<Object> getAmenitiesById(@PathVariable Long id) {
-        try {
-            api.geolocation.datamodels.Amenity amenity = loadAmenityById(id);
+        api.geolocation.datamodels.Amenity amenity = loadAmenityById(id);
 
-            return ResponseEntity.ok(amenity);
-        }
-        catch (NotFoundException exception) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (InvalidRequestException exception){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (Exception exception){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(exception.getMessage()));
-        }
-
+        return ResponseEntity.ok(amenity);
     }
 
     @GetMapping("/roads")
@@ -145,70 +123,46 @@ public class MapController {
         @RequestParam(required = false, name = "bbox.br.y") Double bboxBrY,
         @RequestParam(defaultValue = "50") int take,
         @RequestParam(defaultValue = "0") int skip) {
-        try {
-            if (bboxTlX != null && bboxTlY != null && bboxBrX != null && bboxBrY != null){
-                if (!latitudeIsValid(bboxTlX) || !longitudeIsValid(bboxTlY) ||
-                    !latitudeIsValid(bboxBrX) || !longitudeIsValid(bboxBrY)){
-                    throw new InvalidRequestException("Bad request: coordinates are invalid.");
-                }
-
-                var roads = loadRoads(road, bboxTlX, bboxTlY, bboxBrX, bboxBrY, take, skip);
-
-                roads.sort(Comparator.comparingLong(api.geolocation.datamodels.Road::getId));
-
-                List<api.geolocation.datamodels.Road> toReturn = new ArrayList<>();
-
-                if((take < 0) || (skip < 0)){
-                    throw new InternalIssuesException("Take < 0!");
-                }
-
-                for (int i = skip; i < (take + skip); i++) {
-                    if(i >= roads.size()){
-                        break;
-                    }
-                    toReturn.add(roads.get(i));
-                }
-                var response = new PaginatedResult<api.geolocation.datamodels.Road>(new Paging(skip, take, roads.size()));
-                response.setEntries(toReturn);
-
-                return ResponseEntity.ok(response);
+        if (bboxTlX != null && bboxTlY != null && bboxBrX != null && bboxBrY != null){
+            if (!latitudeIsValid(bboxTlX) || !longitudeIsValid(bboxTlY) ||
+                !latitudeIsValid(bboxBrX) || !longitudeIsValid(bboxBrY)){
+                throw new InvalidRequestException("Bad request: coordinates are invalid.");
             }
 
-            throw new InvalidRequestException("Bad request: invalid query parameters.");
-        }
-        catch (NotFoundException exception) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (InvalidRequestException exception){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (Exception exception){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(exception.getMessage()));
+            var roads = loadRoads(road, bboxTlX, bboxTlY, bboxBrX, bboxBrY, take, skip);
+
+            roads.sort(Comparator.comparingLong(api.geolocation.datamodels.Road::getId));
+
+            List<api.geolocation.datamodels.Road> toReturn = new ArrayList<>();
+
+            if((take < 0) || (skip < 0)){
+                throw new InternalIssuesException("Take < 0!");
+            }
+
+            for (int i = skip; i < (take + skip); i++) {
+                if(i >= roads.size()){
+                    break;
+                }
+                toReturn.add(roads.get(i));
+            }
+            var response = new PaginatedResult<api.geolocation.datamodels.Road>(new Paging(skip, take, roads.size()));
+            response.setEntries(toReturn);
+
+            return ResponseEntity.ok(response);
         }
 
-
+        throw new InvalidRequestException("Bad request: invalid query parameters.");
     }
 
     @GetMapping("/roads/{id}")
     public ResponseEntity<Object> getRoadsById(@PathVariable Long id) {
-        try {
-            api.geolocation.datamodels.Road road = loadRoadById(id);
-            if (road == null) {
-                return ResponseEntity
-                        .status(404)
-                        .body(new ErrorResponse("Entity not found!"));
-            }
-            return ResponseEntity.ok(road);
+        api.geolocation.datamodels.Road road = loadRoadById(id);
+        if (road == null) {
+            return ResponseEntity
+                    .status(404)
+                    .body("Entity not found!");
         }
-        catch (NotFoundException exception) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (InvalidRequestException exception){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (Exception exception){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(exception.getMessage()));
-        }
+        return ResponseEntity.ok(road);
     }
 
     @GetMapping("/tile/{z}/{x}/{y}.png")
@@ -217,27 +171,16 @@ public class MapController {
         @PathVariable int x,
         @PathVariable int y,
         @RequestParam(required = false) String layers) {
-        try {
-            var byteString = loadTile(z, x, y, layers);
+        var byteString = loadTile(z, x, y, layers);
 
-            byte[] pngBytes = new byte[byteString.size()];
+        byte[] pngBytes = new byte[byteString.size()];
 
-            byteString.copyTo(pngBytes, 0);
+        byteString.copyTo(pngBytes, 0);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.IMAGE_PNG);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_PNG);
 
-            return new ResponseEntity<>(pngBytes, headers, HttpStatus.OK);
-        }
-        catch (NotFoundException exception) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (InvalidRequestException exception){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (Exception exception){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(exception.getMessage()));
-        }
+        return new ResponseEntity<>(pngBytes, headers, HttpStatus.OK);
     }
 
     @GetMapping("/route")
@@ -245,28 +188,17 @@ public class MapController {
         @RequestParam(required = false) Long from,
         @RequestParam(required = false) Long to,
         @RequestParam(required = false, defaultValue = "length") String weighting) {
-        try {
-            if (from == null || to == null || weighting == null)  {
-                throw new InvalidRequestException("Invalid parameters!");
-            }
+        if (from == null || to == null || weighting == null)  {
+            throw new InvalidRequestException("Invalid parameters!");
+        }
 
-            if (!weighting.equals("time") && !weighting.equals("length")) {
-                throw new InvalidRequestException("Invalid weighting!!");
-            }
+        if (!weighting.equals("time") && !weighting.equals("length")) {
+            throw new InvalidRequestException("Invalid weighting!!");
+        }
 
-            var routeResponse = loadRoute(from, to, weighting);
+        var routeResponse = loadRoute(from, to, weighting);
 
-            return ResponseEntity.ok(routeResponse);
-        }
-        catch (NotFoundException exception) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (InvalidRequestException exception){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (Exception exception){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(exception.getMessage()));
-        }
+        return ResponseEntity.ok(routeResponse);
     }
 
     @GetMapping("/usage")
@@ -274,31 +206,19 @@ public class MapController {
         @RequestParam(required = false, name = "bbox.tl.x") Double bboxTlX,
         @RequestParam(required = false, name = "bbox.tl.y") Double bboxTlY,
         @RequestParam(required = false, name = "bbox.br.x") Double bboxBrX,
-        @RequestParam(required = false, name = "bbox.br.y") Double bboxBrY)
-    {
-        try {
-            if (bboxTlX == null || bboxTlY == null || bboxBrX == null || bboxBrY == null) {
-                throw new InvalidRequestException("Invalid parameters!");
-            }
+        @RequestParam(required = false, name = "bbox.br.y") Double bboxBrY) {
+        if (bboxTlX == null || bboxTlY == null || bboxBrX == null || bboxBrY == null) {
+            throw new InvalidRequestException("Invalid parameters!");
+        }
 
-            if (!latitudeIsValid(bboxTlX) || !longitudeIsValid(bboxTlY) ||
-                !latitudeIsValid(bboxBrX) || !longitudeIsValid(bboxBrY)){
-                throw new InvalidRequestException("Bad request: coordinates are invalid.");
-            }
+        if (!latitudeIsValid(bboxTlX) || !longitudeIsValid(bboxTlY) ||
+            !latitudeIsValid(bboxBrX) || !longitudeIsValid(bboxBrY)){
+            throw new InvalidRequestException("Bad request: coordinates are invalid.");
+        }
 
-            var usageResponse = loadUsage(bboxTlX, bboxTlY, bboxBrX, bboxBrY);
-            
-            return ResponseEntity.ok(usageResponse);
-        }
-        catch (NotFoundException exception) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (InvalidRequestException exception){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(exception.getMessage()));
-        }
-        catch (Exception exception){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(exception.getMessage()));
-        }
+        var usageResponse = loadUsage(bboxTlX, bboxTlY, bboxBrX, bboxBrY);
+
+        return ResponseEntity.ok(usageResponse);
     }
 
     private RoutingResponse loadRoute(Long from, Long to, String weighting) {
@@ -360,7 +280,8 @@ public class MapController {
         return ByteString.EMPTY;
     }
 
-    public api.geolocation.datamodels.Amenity loadAmenityById(Long id) throws Exception {
+    @SneakyThrows
+    public api.geolocation.datamodels.Amenity loadAmenityById(Long id) {
         api.geolocation.datamodels.Amenity amenity = null;
 
         AmenityByIdRequest request = AmenityByIdRequest.newBuilder().setId(id).build();
@@ -386,7 +307,8 @@ public class MapController {
         return amenity;
     }
 
-    public api.geolocation.datamodels.Road loadRoadById(Long id) throws Exception {
+    @SneakyThrows
+    public api.geolocation.datamodels.Road loadRoadById(Long id) {
         api.geolocation.datamodels.Road road = null;
 
         RoadByIdRequest request = RoadByIdRequest.newBuilder().setId(id).build();
@@ -420,7 +342,7 @@ public class MapController {
             Double bboxBrX,
             Double bboxBrY,
             int take,
-            int skip) throws Exception {
+            int skip) {
 
         var requestBuilder = AmenitiesRequest.newBuilder()
                 .setBboxTlX(bboxTlX)
@@ -453,7 +375,8 @@ public class MapController {
         return amenitiesList;
     }
 
-    private static void buildAmenityResponse(api.geolocation.Amenity currentAmenity, ArrayList<api.geolocation.datamodels.Amenity> amenitiesList) throws ParseException {
+    @SneakyThrows
+    private static void buildAmenityResponse(api.geolocation.Amenity currentAmenity, ArrayList<api.geolocation.datamodels.Amenity> amenitiesList) {
         JSONObject jsonObjectGeometry = (JSONObject) MapApplication.parser.parse(currentAmenity.getJson());
 
         api.geolocation.datamodels.Amenity newAmenity = new api.geolocation.datamodels.Amenity();
@@ -472,7 +395,7 @@ public class MapController {
         Double pointY,
         Double pointD,
         int take,
-        int skip) throws Exception {
+        int skip) {
 
 
         var requestBuilder = AmenitiesRequest.newBuilder()
@@ -505,6 +428,7 @@ public class MapController {
         return amenitiesList;
     }
 
+    @SneakyThrows
     public List<api.geolocation.datamodels.Road> loadRoads (
         String road,
         double bboxTlX,
@@ -512,7 +436,7 @@ public class MapController {
         double bboxBrX,
         double bboxBrY,
         int take,
-        int skip)  throws Exception{
+        int skip) {
 
         var requestBuilder = RoadsRequest.newBuilder()
                 .setBboxTlX(bboxTlX)
