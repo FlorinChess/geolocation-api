@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>at.tugraz.oop2</groupId>
+        <groupId>api.geolocation</groupId>
         <artifactId>jmap</artifactId>
         <version>1.0</version>
     </parent>
@@ -17,7 +17,7 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>at.tugraz.oop2</groupId>
+            <groupId>api.geolocation</groupId>
             <artifactId>shared</artifactId>
             <version>${project.version}</version>
         </dependency>
