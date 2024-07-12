@@ -102,6 +102,7 @@ This request returns land usage statistics based on the provided perimeter.
 
 - [Lombok](https://projectlombok.org/)
 - [gRPC](https://grpc.io/)
+- [protobuf](https://github.com/protocolbuffers/protobuf)
 - [openstreetmap.org](https://www.openstreetmap.org)
 
 ## Disclaimer
