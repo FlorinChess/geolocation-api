@@ -57,12 +57,9 @@ public class MapRenderer {
         List<Way> waterWae = waysMap.values().stream().filter(way -> way.tags.containsKey("water")).toList();
 
         for (String layer : layersArray) {
-            List<Way> selectedRoads = roads.stream().filter(way -> {
-                if (way.tags.get("highway").equals(layer) || (!(isRoad(way.tags.get("highway"))) && layer.equals("road"))){
-                    return true;
-                }
-                return false;
-            }).toList();
+            List<Way> selectedRoads = roads.stream()
+                    .filter(way -> way.tags.get("highway").equals(layer) || (!(isRoad(way.tags.get("highway"))) && layer.equals("road")))
+                    .toList();
             if (layer.equals("road")) {
                 drawRoadSPlural(selectedRoads, giveColor("road"), g);
             } else {
@@ -78,11 +75,11 @@ public class MapRenderer {
             }
         }
 
-        image = flipImagCounterclockwise(image);
+        image = flipImageCounterClockwise(image);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ImageIO.write(image, "png", outputStream);
-        //return baos.toByteArray();
+        //return outputStream.toByteArray();
         return image;
     }
 
@@ -145,14 +142,14 @@ public class MapRenderer {
     }
 
     // sources: https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Java
-    class BoundingBox {
+    static class BoundingBox {
         double north;
         double south;
         double east;
         double west;
     }
 
-    public BoundingBox tile2boundingBox(int x, int y, int zoom) {
+    private BoundingBox tile2boundingBox(int x, int y, int zoom) {
         BoundingBox bb = new BoundingBox();
         bb.north = tile2lat(y, zoom);
         bb.south = tile2lat(y + 1, zoom);
@@ -183,7 +180,7 @@ public class MapRenderer {
         Coordinate start_coord2 = null;
         Coordinate last_coord = null;
         int i = 0;
-        for (Node way : ways){
+        for (Node way : ways) {
             if (way != null) {
                 if (i == 0) {
                     start_coord2 = new Coordinate(way.lat, way.lon);
@@ -195,12 +192,13 @@ public class MapRenderer {
             }
         }
 
-        if (start_coord2.equals(last_coord)){
+        // TODO: Find better solution
+        if (start_coord2 != null && start_coord2.equals(last_coord)) {
             g.setColor(color);
             g.fill(nodelistToPoly(ways));
         }
 
-        for (Node way : ways){
+        for (Node way : ways) {
             if (way != null) {
                 Coordinate coordinate = new Coordinate(transLat(way.lat), transLon(way.lon));
                 if (start_coord != null) {
@@ -213,7 +211,7 @@ public class MapRenderer {
     }
 
     // for rendering whole map
-    static double maxLat(List<Node> nodeLat){
+    static double maxLat(List<Node> nodeLat) {
         double max_lat = 0;
         for (Node node : nodeLat) {
             if (node.lat > max_lat) {
@@ -223,7 +221,7 @@ public class MapRenderer {
         return max_lat;
     }
 
-    static double maxLon(List<Node> nodeLon){
+    static double maxLon(List<Node> nodeLon) {
         double max_lon = 0;
         for (Node node : nodeLon) {
             if (node.lon > max_lon) {
@@ -233,7 +231,7 @@ public class MapRenderer {
         return max_lon;
     }
 
-    static double minLon(List<Node> nodeLon){
+    static double minLon(List<Node> nodeLon) {
         double min_lon = 0xB00B5;
         for (Node node : nodeLon) {
             if (node.lon < min_lon) {
@@ -243,7 +241,7 @@ public class MapRenderer {
         return min_lon;
     }
 
-    static double minLat(List<Node> nodeLat){
+    static double minLat(List<Node> nodeLat) {
         double min_lat = 0xB00B5;
         for (Node node : nodeLat) {
             if (node.lat < min_lat) {
@@ -253,7 +251,7 @@ public class MapRenderer {
         return min_lat;
     }
 
-    public Polygon nodelistToPoly(List<Node> nodeList){
+    public Polygon nodelistToPoly(List<Node> nodeList) {
         Polygon polygon = new Polygon();
         int[] x = new int[nodeList.size()];
         int[] y = new int[nodeList.size()];
@@ -266,21 +264,17 @@ public class MapRenderer {
         return new Polygon(y, x ,nodeList.size());
     }
 
-    private void drawRoadSPlural(List<Way> wayList, Color color, Graphics2D g){
+    private void drawRoadSPlural(List<Way> wayList, Color color, Graphics2D g) {
         for (Way way : wayList) {
             drawRoad(way.getNodeWayList().stream().toList(), color, g);
         }
     }
 
-    private void drawLand(ArrayList<org.locationtech.jts.geom.Polygon> innerPoly, ArrayList<org.locationtech.jts.geom.Polygon> outerPoly, Color color, Graphics2D g){
+    private void drawLand(ArrayList<org.locationtech.jts.geom.Polygon> innerPoly, ArrayList<org.locationtech.jts.geom.Polygon> outerPoly, Color color, Graphics2D g) {
         Area area = new Area();
-        outerPoly.forEach(poly -> {
-            area.add(new Area(transPolygon(poly)));
-        });
+        outerPoly.forEach(poly -> area.add(new Area(transPolygon(poly))));
 
-        innerPoly.forEach(poly -> {
-            area.subtract(new Area(transPolygon(poly)));
-        });
+        innerPoly.forEach(poly -> area.subtract(new Area(transPolygon(poly))));
 
         /*if (color.equals(new Color(173,209,158))){
             System.out.println("forest");
@@ -306,7 +300,7 @@ public class MapRenderer {
         return new Polygon(y, x, badPolygon.getNumPoints());
     }
 
-    public BufferedImage flipImagCounterclockwise(BufferedImage flipped) {
+    public BufferedImage flipImageCounterClockwise(BufferedImage flipped) {
         for (int i = 0; i < 3; i++){
             flipped = flipImag(flipped);
         }
