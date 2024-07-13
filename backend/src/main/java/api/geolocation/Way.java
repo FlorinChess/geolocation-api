@@ -14,7 +14,7 @@ public class Way {
         nodeRefs = new ArrayList<>();
     }
 
-    ArrayList<Node> getNodeWayList(){
+    ArrayList<Node> getNodeWayList() {
         ArrayList<Node> nodeWay = new ArrayList<>();
         for (var ref : nodeRefs) {
             nodeWay.add(MapServiceServer.getWayNodeById(ref));

@@ -19,7 +19,7 @@ public class Node {
         tags = new HashMap<>();
     }
 
-    public Geometry toPoint(){
+    public Geometry toPoint() {
         Coordinate[] coordinates = new Coordinate[] { new Coordinate(lon, lat) };
 
         return new Point(CoordinateArraySequenceFactory.instance()

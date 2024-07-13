@@ -210,7 +210,6 @@ public class MapRenderer {
         }
     }
 
-    // for rendering whole map
     static double maxLat(List<Node> nodeLat) {
         double max_lat = 0;
         for (Node node : nodeLat) {

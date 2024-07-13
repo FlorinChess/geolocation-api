@@ -46,7 +46,6 @@ public class Relation {
         return outerPolygons;
     }
 
-    // from the readme pseudocode
     public GeometryCollection toGeometry() {
         if (tags.containsValue("multipolygon")) {
             List<MultiPolygon> multiPolygons = new ArrayList<>();

@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class CommunicationService extends CommunicationServiceGrpc.CommunicationServiceImplBase{
+public class CommunicationService extends CommunicationServiceGrpc.CommunicationServiceImplBase {
     private MathTransform transform = null;
     private final GeoJsonWriter writer = new GeoJsonWriter();
     private final MapRenderer mapRenderer = new MapRenderer();
@@ -43,9 +43,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
         var responseBuilder = AmenitiesResponse.newBuilder();
 
-        if (request.getBboxTlX() == 0 && request.getBboxTlY() == 0 &&
-                request.getBboxBrX() == 0 && request.getBboxBrY() == 0) {
-
+        if (request.getBboxTlX() == 0 && request.getBboxTlY() == 0 && request.getBboxBrX() == 0 && request.getBboxBrY() == 0) {
             try {
                 Node nodeFromParameters = new Node();
 
