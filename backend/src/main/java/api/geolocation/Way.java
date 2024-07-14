@@ -6,16 +6,23 @@ import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.impl.CoordinateArraySequenceFactory;
 
 public class Way {
-    long id;
-    List<Long> nodeRefs;
+    public long id;
     Map<String, String> tags;
+    List<Long> nodeRefs;
 
     public Way() {
         tags = new HashMap<>();
         nodeRefs = new ArrayList<>();
     }
 
-    ArrayList<Node> getNodeWayList() {
+    public Way(long id,  Map<String, String> tags, List<Long> nodeRefs)
+    {
+        this.id = id;
+        this.tags = tags;
+        this.nodeRefs = nodeRefs;
+    }
+
+    List<Node> getListOfNodes() {
         ArrayList<Node> nodeWay = new ArrayList<>();
         for (var ref : nodeRefs) {
             nodeWay.add(MapServiceServer.getWayNodeById(ref));

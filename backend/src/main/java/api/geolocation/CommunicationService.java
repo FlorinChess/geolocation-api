@@ -50,7 +50,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
                 nodeFromParameters.lon = request.getPointX();
                 nodeFromParameters.lat = request.getPointY();
 
-                Geometry geometryPoint = JTS.transform(nodeFromParameters.toPoint(), getMathTransform());
+                Geometry geometryPoint = JTS.transform(nodeFromParameters.toGeometry(), getMathTransform());
 
                 for (var entry : MapServiceServer.amenities.entrySet()) {
                     var amenityModel = entry.getValue();
@@ -263,11 +263,11 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
                     request.getY(),
                     request.getLayers());
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(image, "png", baos);
-            baos.flush();
-            byte[] bytes = baos.toByteArray();
-            baos.close();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            ImageIO.write(image, "png", outputStream);
+            outputStream.flush();
+            byte[] bytes = outputStream.toByteArray();
+            outputStream.close();
 
             var byteString = ByteString.copyFrom(bytes);
 
