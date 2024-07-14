@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <javaVersion>17</javaVersion>
+        <javaVersion>21</javaVersion>
         <protobuf.version>3.21.7</protobuf.version>
         <grpc.version>1.56.1</grpc.version>
         <gt.version>29.1</gt.version>
