@@ -2,7 +2,6 @@ package api.geolocation;
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.impl.CoordinateArraySequenceFactory;
 
@@ -23,6 +22,6 @@ public class Node {
         Coordinate[] coordinates = new Coordinate[] { new Coordinate(lon, lat) };
 
         return new Point(CoordinateArraySequenceFactory.instance()
-                .create(coordinates), new GeometryFactory());
+                .create(coordinates), MapServiceServer.geometryFactory);
     }
 }

@@ -1,4 +1,5 @@
 package api.geolocation;
+
 import java.util.*;
 
 import org.locationtech.jts.geom.*;
@@ -35,15 +36,15 @@ public class Way {
         }
 
         if (coordinates.length > 2 && Objects.equals(nodeRefs.get(0), nodeRefs.get((nodeRefs.size() - 1)))){
-            LinearRing linearRing = new GeometryFactory().createLinearRing(coordinates);
-            return new Polygon(linearRing, null, new GeometryFactory());
+            LinearRing linearRing = MapServiceServer.geometryFactory.createLinearRing(coordinates);
+            return new Polygon(linearRing, null, MapServiceServer.geometryFactory);
         }
 
         if (coordinates.length == 1) {
-            return new Point(CoordinateArraySequenceFactory.instance().create(coordinates), new GeometryFactory());
+            return new Point(CoordinateArraySequenceFactory.instance().create(coordinates), MapServiceServer.geometryFactory);
         }
 
-        return new LineString(CoordinateArraySequenceFactory.instance().create(coordinates), new GeometryFactory());
+        return new LineString(CoordinateArraySequenceFactory.instance().create(coordinates), MapServiceServer.geometryFactory);
     }
 
 }

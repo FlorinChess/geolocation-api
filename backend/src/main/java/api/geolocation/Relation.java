@@ -101,7 +101,7 @@ public class Relation {
             geometryArray[i] = geometries.get(i);
         }
 
-        return new GeometryCollection(geometryArray, new GeometryFactory());
+        return new GeometryCollection(geometryArray, MapServiceServer.geometryFactory);
     }
 
     private static ClosedCircleResult getNextClosed(int i, List<Member> members) {
@@ -132,9 +132,9 @@ public class Relation {
             try {
                 var lineString = (LineString) mergedLinesCollection.stream().findFirst().get();
 
-                LinearRing linearRing = new GeometryFactory().createLinearRing(lineString.getCoordinates());
+                LinearRing linearRing = MapServiceServer.geometryFactory.createLinearRing(lineString.getCoordinates());
 
-                Polygon polygon = new Polygon(linearRing, null, new GeometryFactory());
+                Polygon polygon = new Polygon(linearRing, null, MapServiceServer.geometryFactory);
                 return new ClosedCircleResult(polygon, lastRole, i);
             }
             catch (Exception ex) {
@@ -152,6 +152,6 @@ public class Relation {
             polygonArray[i] = polygons.get(i);
         }
 
-        return new MultiPolygon(polygonArray, new GeometryFactory());
+        return new MultiPolygon(polygonArray, MapServiceServer.geometryFactory);
     }
 }

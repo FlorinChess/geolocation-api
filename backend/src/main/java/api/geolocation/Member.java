@@ -2,13 +2,13 @@ package api.geolocation;
 
 import org.locationtech.jts.geom.*;
 
-public class Member extends Geometry{
+public class Member extends Geometry {
     String type;
     Long ref;
     String role;
 
-    public Member() {
-        super(new GeometryFactory());
+    public Member(GeometryFactory factory) {
+        super(factory);
     }
 
     @Override
@@ -109,5 +109,14 @@ public class Member extends Geometry{
     @Override
     protected int getTypeCode() {
         return 0;
+    }
+
+    @Override
+    public String toString() {
+        return "Member{" +
+                "type='" + type + '\'' +
+                ", ref=" + ref +
+                ", role='" + role + '\'' +
+                '}';
     }
 }

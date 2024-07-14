@@ -80,8 +80,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
                     request.getBboxBrX(),
                     request.getBboxBrY());
 
-            GeometryFactory factory = new GeometryFactory();
-            var boundingBoxPolygon = factory.toGeometry(boundingBox);
+            var boundingBoxPolygon = MapServiceServer.geometryFactory.toGeometry(boundingBox);
 
             for (var entry : MapServiceServer.amenities.entrySet()) {
                 AmenityModel amenityModel = entry.getValue();
@@ -172,8 +171,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
                 request.getBboxBrX(),
                 request.getBboxBrY());
 
-        GeometryFactory factory = new GeometryFactory();
-        var boundingBoxPolygon = factory.toGeometry(boundingBox);
+        var boundingBoxPolygon = MapServiceServer.geometryFactory.toGeometry(boundingBox);
 
         for (var entry : MapServiceServer.roads.entrySet()) {
             RoadModel roadModel = entry.getValue();

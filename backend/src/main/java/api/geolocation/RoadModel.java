@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.Map;
 
 public class RoadModel {
-    Long id;
+    long id;
     Geometry geometry;
     Map<String, String> tags;
     List<Long> nodeRefs;
 
-    public RoadModel(Long id, Geometry geometry, Map<String, String> tags, List<Long> nodeRefs) {
+    public RoadModel(long id, Geometry geometry, Map<String, String> tags, List<Long> nodeRefs) {
         this.id = id;
         this.geometry = geometry;
         this.tags = tags;

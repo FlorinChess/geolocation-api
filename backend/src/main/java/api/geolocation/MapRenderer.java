@@ -1,6 +1,5 @@
 package api.geolocation;
 
-
 import org.locationtech.jts.geom.Coordinate;
 import javax.imageio.ImageIO;
 import java.awt.*;

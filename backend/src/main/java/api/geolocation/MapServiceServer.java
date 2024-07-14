@@ -20,6 +20,7 @@ public class MapServiceServer {
     public static final HashMap<Long, Relation> relationsMap = new HashMap<>();
     public static final HashMap<Long, AmenityModel> amenities = new HashMap<>();
     public static final HashMap<Long, RoadModel> roads = new HashMap<>();
+    public static final GeometryFactory geometryFactory = new GeometryFactory();
 
     private static int amenityCount = 0;
     private static int roadCount = 0;
@@ -137,7 +138,7 @@ public class MapServiceServer {
                     nodeAmenitiesCount++;
 
                     var geometry = newNode.toPoint();
-                    AmenityModel newAmenity = new AmenityModel(geometry, newNode.tags, newNode.id);
+                    AmenityModel newAmenity = new AmenityModel(newNode.id, geometry, newNode.tags);
                     amenities.put(newNode.id, newAmenity);
 
                 }
@@ -207,7 +208,7 @@ public class MapServiceServer {
                     wayAmenitiesCount++;
 
                     var geometry = newWay.toGeometry();
-                    AmenityModel newAmenity = new AmenityModel(geometry, newWay.tags, newWay.id);
+                    AmenityModel newAmenity = new AmenityModel(newWay.id, geometry, newWay.tags);
                     amenities.put(newWay.id, newAmenity);
                 }
 
@@ -255,7 +256,7 @@ public class MapServiceServer {
 
                     // Set members
                     if (currentChildNode.getNodeName().equals("member")) {
-                        Member newMember = new Member();
+                        Member newMember = new Member(geometryFactory);
                         newMember.ref = Long.parseLong(childNodeAttributes.item(0).getNodeValue());
                         newMember.role = childNodeAttributes.item(1).getNodeValue();
                         newMember.type = childNodeAttributes.item(2).getNodeValue();
@@ -282,7 +283,7 @@ public class MapServiceServer {
                 if (newRelation.tags.containsKey("amenity")){
                     try {
                         var geometry = newRelation.toGeometry();
-                        AmenityModel newAmenity = new AmenityModel(geometry, newRelation.tags, newRelation.id);
+                        AmenityModel newAmenity = new AmenityModel(newRelation.id, geometry, newRelation.tags);
                         amenities.put(newRelation.id, newAmenity);
                         relationAmenityCount++;
                     }
