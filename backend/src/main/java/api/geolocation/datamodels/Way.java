@@ -1,14 +1,18 @@
-package api.geolocation;
+package api.geolocation.datamodels;
 
 import java.util.*;
 
+import api.geolocation.IOSMDataModel;
+import api.geolocation.MapServiceServer;
+import lombok.Data;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.impl.CoordinateArraySequenceFactory;
 
-public class Way {
-    public long id;
-    Map<String, String> tags;
-    List<Long> nodeRefs;
+@Data
+public class Way implements IOSMDataModel {
+    private long id;
+    private Map<String, String> tags;
+    private List<Long> nodeRefs;
 
     public Way() {
         tags = new HashMap<>();
@@ -22,7 +26,7 @@ public class Way {
         this.nodeRefs = nodeRefs;
     }
 
-    List<Node> getListOfNodes() {
+    public List<Node> getListOfNodes() {
         ArrayList<Node> nodeWay = new ArrayList<>();
         for (var ref : nodeRefs) {
             nodeWay.add(MapServiceServer.getWayNodeById(ref));
@@ -38,7 +42,7 @@ public class Way {
 
             if (node == null) continue;
 
-            coordinates[i] = new Coordinate(node.lon, node.lat);
+            coordinates[i] = new Coordinate(node.getLon(), node.getLat());
             i++;
         }
 

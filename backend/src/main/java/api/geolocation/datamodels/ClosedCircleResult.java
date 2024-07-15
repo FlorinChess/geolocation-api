@@ -1,4 +1,4 @@
-package api.geolocation;
+package api.geolocation.datamodels;
 
 import org.locationtech.jts.geom.Polygon;
 

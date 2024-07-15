@@ -1,4 +1,7 @@
-package api.geolocation;
+package api.geolocation.datamodels;
+import api.geolocation.IOSMDataModel;
+import api.geolocation.MapServiceServer;
+import lombok.Data;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.operation.linemerge.LineMerger;
 import java.util.ArrayList;
@@ -6,17 +9,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Relation {
-    long id;
-    List<Member> members;
-    Map<String, String> tags;
+@Data
+public class Relation implements IOSMDataModel {
+    private long id;
+    private List<Member> members;
+    private Map<String, String> tags;
 
     public Relation() {
         members = new ArrayList<>();
         tags = new HashMap<>();
     }
 
-    ArrayList<Polygon> getInnerPolygons(){
+    public Relation(long id, List<Member> members, Map<String, String> tags) {
+        this.id = id;
+        this.members = members;
+        this.tags = tags;
+    }
+
+    public ArrayList<Polygon> getInnerPolygons() {
         ArrayList<Polygon> innerPolygons = new ArrayList<>();
 
         for (int i = 0; i < members.size();) {
@@ -31,7 +41,7 @@ public class Relation {
         return innerPolygons;
     }
 
-    ArrayList<Polygon> getOuterPolygons(){
+    public ArrayList<Polygon> getOuterPolygons() {
         ArrayList<Polygon> outerPolygons = new ArrayList<>();
 
         for (int i = 0; i < members.size();) {
@@ -112,7 +122,8 @@ public class Relation {
             Member member = members.get(i);
             Way way = MapServiceServer.getRelationWayById(member.ref);
 
-            if (way == null) continue;
+            if (way == null)
+                continue;
 
             var geometry = way.toGeometry();
 

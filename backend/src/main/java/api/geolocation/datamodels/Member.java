@@ -1,4 +1,4 @@
-package api.geolocation;
+package api.geolocation.datamodels;
 
 import org.locationtech.jts.geom.*;
 
@@ -9,6 +9,30 @@ public class Member extends Geometry {
 
     public Member(GeometryFactory factory) {
         super(factory);
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public Long getRef() {
+        return ref;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setRef(Long ref) {
+        this.ref = ref;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     @Override
