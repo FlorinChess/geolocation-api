@@ -27,6 +27,7 @@ public class MapControllerAdvisor extends ResponseEntityExceptionHandler {
     @ExceptionHandler(InvalidRequestException.class)
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     public String invalidRequestException(InvalidRequestException exception) {
+        // TODO: fix faulty exception handling; this returns 404 instead of 500 when calling getTile()
         return URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
     }
 
