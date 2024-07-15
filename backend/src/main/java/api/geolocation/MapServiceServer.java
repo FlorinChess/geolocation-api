@@ -1,5 +1,6 @@
 package api.geolocation;
 
+import api.geolocation.datamodels.*;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import org.locationtech.jts.geom.*;
@@ -13,8 +14,8 @@ import java.util.logging.Logger;
 
 public class MapServiceServer {
     private static final Logger logger = Logger.getLogger(MapServiceServer.class.getName());
-    public static final HashMap<Long, api.geolocation.Node> nodesMap = new HashMap<>();
-    public static final HashMap<Long, api.geolocation.Node> roadsNodesMap = new HashMap<>();
+    public static final HashMap<Long, api.geolocation.datamodels.Node> nodesMap = new HashMap<>();
+    public static final HashMap<Long, api.geolocation.datamodels.Node> roadsNodesMap = new HashMap<>();
     public static final HashMap<Long, Way> waysMap = new HashMap<>();
     public static final HashMap<Long, Way> waysRelationMap = new HashMap<>();
     public static final HashMap<Long, Relation> relationsMap = new HashMap<>();
@@ -116,10 +117,10 @@ public class MapServiceServer {
                 org.w3c.dom.Node currentNode = nodes.item(i);
                 var attributes = currentNode.getAttributes();
 
-                api.geolocation.Node newNode = new api.geolocation.Node();
-                newNode.id = Long.parseLong(attributes.item(0).getNodeValue());
-                newNode.lat = Double.parseDouble(attributes.item(1).getNodeValue());
-                newNode.lon = Double.parseDouble(attributes.item(2).getNodeValue());
+                api.geolocation.datamodels.Node newNode = new api.geolocation.datamodels.Node();
+                newNode.setId(Long.parseLong(attributes.item(0).getNodeValue()));
+                newNode.setLat(Double.parseDouble(attributes.item(1).getNodeValue()));
+                newNode.setLon(Double.parseDouble(attributes.item(2).getNodeValue()));
 
                 var childNodes = currentNode.getChildNodes();
 
@@ -131,28 +132,28 @@ public class MapServiceServer {
 
                     String key = childNodeAttributes.item(0).getNodeValue();
                     String val = childNodeAttributes.item(1).getNodeValue();
-                    newNode.tags.put(key, val);
+                    newNode.getTags().put(key, val);
                 }
 
-                if (newNode.tags.containsKey("amenity")) {
+                if (newNode.getTags().containsKey("amenity")) {
                     nodeAmenitiesCount++;
 
-                    var geometry = newNode.toPoint();
-                    AmenityModel newAmenity = new AmenityModel(newNode.id, geometry, newNode.tags);
-                    amenities.put(newNode.id, newAmenity);
+                    var geometry = newNode.toGeometry();
+                    AmenityModel newAmenity = new AmenityModel(newNode.getId(), geometry, newNode.getTags());
+                    amenities.put(newNode.getId(), newAmenity);
 
                 }
 
-                if (newNode.tags.containsKey("highway")) {
+                if (newNode.getTags().containsKey("highway")) {
                     nodeRoadsCount++;
 
-                    var geometry = newNode.toPoint();
+                    var geometry = newNode.toGeometry();
                     // TODO: nodeRefs
-                    RoadModel newRoad = new RoadModel(newNode.id, geometry, newNode.tags, new ArrayList<>());
-                    roads.put(newNode.id, newRoad);
+                    RoadModel newRoad = new RoadModel(newNode.getId(), geometry, newNode.getTags(), new ArrayList<>());
+                    roads.put(newNode.getId(), newRoad);
                 }
 
-                nodesMap.put(newNode.id, newNode);
+                nodesMap.put(newNode.getId(), newNode);
             }
 
             System.out.println("Number of nodes representing amenities: " + nodeAmenitiesCount);
@@ -175,7 +176,7 @@ public class MapServiceServer {
                 org.w3c.dom.Node currentNode = ways.item(i);
 
                 Way newWay = new Way();
-                newWay.id = Long.parseLong(currentNode.getAttributes().item(0).getNodeValue());
+                newWay.setId(Long.parseLong(currentNode.getAttributes().item(0).getNodeValue()));
 
                 var childNodes = currentNode.getChildNodes();
                 for (int j = 0; j < childNodes.getLength(); j++) {
@@ -188,11 +189,11 @@ public class MapServiceServer {
                     {
                         var refId = Long.parseLong(childNodeAttributes.item(0).getNodeValue());
 
-                        newWay.nodeRefs.add(refId);
-                        api.geolocation.Node toBeRemoved = nodesMap.remove(refId);
+                        newWay.getNodeRefs().add(refId);
+                        api.geolocation.datamodels.Node toBeRemoved = nodesMap.remove(refId);
 
                         if (toBeRemoved != null) {
-                            roadsNodesMap.put(toBeRemoved.id, toBeRemoved);
+                            roadsNodesMap.put(toBeRemoved.getId(), toBeRemoved);
                         }
                     }
 
@@ -200,27 +201,27 @@ public class MapServiceServer {
                     {
                         String key = childNodeAttributes.item(0).getNodeValue();
                         String val = childNodeAttributes.item(1).getNodeValue();
-                        newWay.tags.put(key, val);
+                        newWay.getTags().put(key, val);
                     }
                 }
 
-                if (newWay.tags.containsKey("amenity")) {
+                if (newWay.getTags().containsKey("amenity")) {
                     wayAmenitiesCount++;
 
                     var geometry = newWay.toGeometry();
-                    AmenityModel newAmenity = new AmenityModel(newWay.id, geometry, newWay.tags);
-                    amenities.put(newWay.id, newAmenity);
+                    AmenityModel newAmenity = new AmenityModel(newWay.getId(), geometry, newWay.getTags());
+                    amenities.put(newWay.getId(), newAmenity);
                 }
 
-                if (newWay.tags.containsKey("highway")) {
+                if (newWay.getTags().containsKey("highway")) {
                     wayRoadsCount++;
 
                     var geometry = newWay.toGeometry();
-                    RoadModel newRoad = new RoadModel(newWay.id, geometry, newWay.tags, newWay.nodeRefs);
-                    roads.put(newWay.id, newRoad);
+                    RoadModel newRoad = new RoadModel(newWay.getId(), geometry, newWay.getTags(), newWay.getNodeRefs());
+                    roads.put(newWay.getId(), newRoad);
                 }
 
-                waysMap.put(newWay.id, newWay);
+                waysMap.put(newWay.getId(), newWay);
             }
 
             System.out.println("Number of ways representing amenities: " + wayAmenitiesCount);
@@ -244,7 +245,7 @@ public class MapServiceServer {
                 org.w3c.dom.Node currentNode = relations.item(i);
 
                 Relation newRelation = new Relation();
-                newRelation.id = Long.parseLong(currentNode.getAttributes().item(0).getNodeValue());
+                newRelation.setId(Long.parseLong(currentNode.getAttributes().item(0).getNodeValue()));
 
                 NodeList childNodes = currentNode.getChildNodes();
                 for (int j = 0; j < childNodes.getLength(); j++) {
@@ -257,18 +258,18 @@ public class MapServiceServer {
                     // Set members
                     if (currentChildNode.getNodeName().equals("member")) {
                         Member newMember = new Member(geometryFactory);
-                        newMember.ref = Long.parseLong(childNodeAttributes.item(0).getNodeValue());
-                        newMember.role = childNodeAttributes.item(1).getNodeValue();
-                        newMember.type = childNodeAttributes.item(2).getNodeValue();
+                        newMember.setRef(Long.parseLong(childNodeAttributes.item(0).getNodeValue()));
+                        newMember.setRole(childNodeAttributes.item(1).getNodeValue());
+                        newMember.setType(childNodeAttributes.item(2).getNodeValue());
 
-                        newRelation.members.add(newMember);
+                        newRelation.getMembers().add(newMember);
 
-                        var refId = newMember.ref;
+                        var refId = newMember.getRef();
 
                         Way toBeRemoved = waysMap.remove(refId);
 
                         if (toBeRemoved != null) {
-                            waysRelationMap.put(toBeRemoved.id, toBeRemoved);
+                            waysRelationMap.put(toBeRemoved.getId(), toBeRemoved);
                         }
                     }
 
@@ -276,15 +277,15 @@ public class MapServiceServer {
                     if (currentChildNode.getNodeName().equals("tag")) {
                         String key = childNodeAttributes.item(0).getNodeValue();
                         String val = childNodeAttributes.item(1).getNodeValue();
-                        newRelation.tags.put(key, val);
+                        newRelation.getTags().put(key, val);
                     }
                 }
 
-                if (newRelation.tags.containsKey("amenity")){
+                if (newRelation.getTags().containsKey("amenity")){
                     try {
                         var geometry = newRelation.toGeometry();
-                        AmenityModel newAmenity = new AmenityModel(newRelation.id, geometry, newRelation.tags);
-                        amenities.put(newRelation.id, newAmenity);
+                        AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
+                        amenities.put(newRelation.getId(), newAmenity);
                         relationAmenityCount++;
                     }
                     catch (Exception ex) {
@@ -292,12 +293,12 @@ public class MapServiceServer {
                     }
                 }
 
-                if (newRelation.tags.containsKey("highway")) {
+                if (newRelation.getTags().containsKey("highway")) {
                     try {
                         var geometry = newRelation.toGeometry();
                         // TODO: nodeRefs
-                        RoadModel newRoad = new RoadModel(newRelation.id, geometry, newRelation.tags, new ArrayList<>());
-                        roads.put(newRelation.id, newRoad);
+                        RoadModel newRoad = new RoadModel(newRelation.getId(), geometry, newRelation.getTags(), new ArrayList<>());
+                        roads.put(newRelation.getId(), newRoad);
                         relationRoadsCount++;
                     }
                     catch (Exception ex) {
@@ -305,7 +306,7 @@ public class MapServiceServer {
                     }
                 }
 
-                relationsMap.put(newRelation.id, newRelation);
+                relationsMap.put(newRelation.getId(), newRelation);
             }
 
             System.out.println("Number of relations representing amenities: " + relationAmenityCount);
@@ -324,7 +325,7 @@ public class MapServiceServer {
         return waysRelationMap.get(id);
     }
 
-    public static api.geolocation.Node getWayNodeById(long id) {
+    public static api.geolocation.datamodels.Node getWayNodeById(long id) {
         return roadsNodesMap.get(id);
     }
 

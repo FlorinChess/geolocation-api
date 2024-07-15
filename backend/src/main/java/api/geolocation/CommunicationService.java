@@ -1,5 +1,8 @@
 package api.geolocation;
 
+import api.geolocation.datamodels.AmenityModel;
+import api.geolocation.datamodels.Node;
+import api.geolocation.datamodels.RoadModel;
 import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
 import org.geotools.geometry.jts.JTS;
@@ -47,15 +50,15 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
             try {
                 Node nodeFromParameters = new Node();
 
-                nodeFromParameters.lon = request.getPointX();
-                nodeFromParameters.lat = request.getPointY();
+                nodeFromParameters.setLon(request.getPointX());
+                nodeFromParameters.setLat(request.getPointY());
 
                 Geometry geometryPoint = JTS.transform(nodeFromParameters.toGeometry(), getMathTransform());
 
                 for (var entry : MapServiceServer.amenities.entrySet()) {
                     var amenityModel = entry.getValue();
                     try {
-                        var transformedGeometry = JTS.transform(amenityModel.geometry, getMathTransform());
+                        var transformedGeometry = JTS.transform(amenityModel.getGeometry(), getMathTransform());
 
                         var distanceInMeters = transformedGeometry.distance(geometryPoint);
 
@@ -86,7 +89,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
                 AmenityModel amenityModel = entry.getValue();
 
                 try {
-                    if (amenityModel.geometry != null && boundingBoxPolygon.intersects(amenityModel.geometry)) {
+                    if (amenityModel.getGeometry() != null && boundingBoxPolygon.intersects(amenityModel.getGeometry())) {
                         checkAmenityParameter(request, amenityModel, "highway", amenitiesFound);
                     }
                 }
@@ -113,7 +116,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
     private static void checkAmenityParameter(AmenitiesRequest request, AmenityModel amenityModel, String amenity, List<AmenityModel> amenitiesFound) {
         if (!(request.getAmenity().isEmpty())) {
-            if (request.getAmenity().equals(amenityModel.tags.get(amenity))) {
+            if (request.getAmenity().equals(amenityModel.getTags().get(amenity))) {
                 amenitiesFound.add(amenityModel);
             }
         } else {
@@ -131,20 +134,20 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         var responseBuilder = AmenityResponse.newBuilder();
 
         if (amenityModel != null) {
-            var json = writer.write(amenityModel.geometry);
+            var json = writer.write(amenityModel.getGeometry());
             var type = "";
             var name = "";
 
-            if (!amenityModel.tags.isEmpty()) {
-                type = amenityModel.tags.getOrDefault("amenity", "");
-                name = amenityModel.tags.getOrDefault("name", "");
+            if (!amenityModel.getTags().isEmpty()) {
+                type = amenityModel.getTags().getOrDefault("amenity", "");
+                name = amenityModel.getTags().getOrDefault("name", "");
             }
 
             responseBuilder.setId(id);
             responseBuilder.setJson(json);
             responseBuilder.setType(type);
             responseBuilder.setName(name);
-            responseBuilder.putAllTags(amenityModel.tags);
+            responseBuilder.putAllTags(amenityModel.getTags());
             responseBuilder.setStatus(Status.Success);
         }
         else {
@@ -177,9 +180,9 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
             RoadModel roadModel = entry.getValue();
 
             try {
-                if (roadModel.geometry != null && boundingBoxPolygon.intersects(roadModel.geometry)) {
+                if (roadModel.getGeometry() != null && boundingBoxPolygon.intersects(roadModel.getGeometry())) {
                     if (!(request.getRoad().isEmpty())) {
-                        if (request.getRoad().equals(roadModel.tags.get("highway"))) {
+                        if (request.getRoad().equals(roadModel.getTags().get("highway"))) {
                             roadsFound.add(roadModel);
                         }
                     }
@@ -219,22 +222,22 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         var responseBuilder = RoadResponse.newBuilder();
 
         if (road != null) {
-            var json = writer.write(road.geometry);
+            var json = writer.write(road.getGeometry());
             var type = "";
             var name = "";
 
-            if (!road.tags.isEmpty()) {
-                type = road.tags.get("highway");
-                name = road.tags.getOrDefault("name", "");
+            if (!road.getTags().isEmpty()) {
+                type = road.getTags().get("highway");
+                name = road.getTags().getOrDefault("name", "");
             }
 
-            responseBuilder.setId(road.id);
+            responseBuilder.setId(road.getId());
             responseBuilder.setJson(json);
             responseBuilder.setType(type);
             responseBuilder.setName(name);
-            responseBuilder.putAllTags(road.tags);
+            responseBuilder.putAllTags(road.getTags());
             responseBuilder.setStatus(Status.Success);
-            responseBuilder.addAllChildIds(road.nodeRefs);
+            responseBuilder.addAllChildIds(road.getNodeRefs());
         }
         else {
             responseBuilder.setStatus(Status.NotFound);
@@ -307,42 +310,42 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
     private Amenity buildResponseAmenity(AmenityModel amenityModel){
         var amenityBuilder = Amenity.newBuilder();
 
-        var json = writer.write(amenityModel.geometry);
+        var json = writer.write(amenityModel.getGeometry());
         var type = "";
         var name = "";
 
-        if (!amenityModel.tags.isEmpty()) {
-            type = amenityModel.tags.getOrDefault("amenity", "");
-            name = amenityModel.tags.getOrDefault("name", "");
+        if (!amenityModel.getTags().isEmpty()) {
+            type = amenityModel.getTags().getOrDefault("amenity", "");
+            name = amenityModel.getTags().getOrDefault("name", "");
         }
 
-        amenityBuilder.setId(amenityModel.id);
+        amenityBuilder.setId(amenityModel.getId());
         amenityBuilder.setJson(json);
         amenityBuilder.setType(type);
         amenityBuilder.setName(name);
-        amenityBuilder.putAllTags(amenityModel.tags);
+        amenityBuilder.putAllTags(amenityModel.getTags());
 
         return amenityBuilder.build();
     }
 
     private Road buildResponseRoad(RoadModel roadModel){
         var roadBuilder = Road.newBuilder();
-        var json = writer.write(roadModel.geometry);
+        var json = writer.write(roadModel.getGeometry());
         var type = "";
         var name = "";
 
 
-        if (!roadModel.tags.isEmpty()) {
-            type = roadModel.tags.get("highway");
-            name = roadModel.tags.getOrDefault("name", "");
+        if (!roadModel.getTags().isEmpty()) {
+            type = roadModel.getTags().get("highway");
+            name = roadModel.getTags().getOrDefault("name", "");
         }
 
-        roadBuilder.setId(roadModel.id);
+        roadBuilder.setId(roadModel.getId());
         roadBuilder.setJson(json);
         roadBuilder.setType(type);
         roadBuilder.setName(name);
-        roadBuilder.putAllTags(roadModel.tags);
-        roadBuilder.addAllChildIds(roadModel.nodeRefs);
+        roadBuilder.putAllTags(roadModel.getTags());
+        roadBuilder.addAllChildIds(roadModel.getNodeRefs());
         return roadBuilder.build();
     }
 }

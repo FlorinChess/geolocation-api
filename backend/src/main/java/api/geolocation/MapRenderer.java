@@ -1,5 +1,8 @@
 package api.geolocation;
 
+import api.geolocation.datamodels.Node;
+import api.geolocation.datamodels.Relation;
+import api.geolocation.datamodels.Way;
 import org.locationtech.jts.geom.Coordinate;
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -47,30 +50,30 @@ public class MapRenderer {
 
         String[] layersArray = layers.split(",");
 
-        List<Way> roads = waysMap.values().stream().filter(way -> way.tags.containsKey("highway")).toList();
+        List<Way> roads = waysMap.values().stream().filter(way -> way.getTags().containsKey("highway")).toList();
 
-        List<Relation> landRelations = relationsMap.values().stream().filter(relation -> relation.tags.containsKey("landuse")).toList();
+        List<Relation> landRelations = relationsMap.values().stream().filter(relation -> relation.getTags().containsKey("landuse")).toList();
 
-        List<Relation> waterRelations = relationsMap.values().stream().filter(relation -> relation.tags.containsKey("water")).toList();
+        List<Relation> waterRelations = relationsMap.values().stream().filter(relation -> relation.getTags().containsKey("water")).toList();
 
-        List<Way> waterWae = waysMap.values().stream().filter(way -> way.tags.containsKey("water")).toList();
+        List<Way> waterWae = waysMap.values().stream().filter(way -> way.getTags().containsKey("water")).toList();
 
         for (String layer : layersArray) {
             List<Way> selectedRoads = roads.stream()
-                    .filter(way -> way.tags.get("highway").equals(layer) || (!(isRoad(way.tags.get("highway"))) && layer.equals("road")))
+                    .filter(way -> way.getTags().get("highway").equals(layer) || (!(isRoad(way.getTags().get("highway"))) && layer.equals("road")))
                     .toList();
             if (layer.equals("road")) {
-                drawRoadSPlural(selectedRoads, giveColor("road"), g);
+                drawRoads(selectedRoads, giveColor("road"), g);
             } else {
-                drawRoadSPlural(selectedRoads, giveColor(layer), g);
+                drawRoads(selectedRoads, giveColor(layer), g);
             }
 
-            List<Relation> selectedRelation = landRelations.stream().filter(relation -> relation.tags.get("landuse").equals(layer)).toList();
-            drawLandSPlural(selectedRelation, giveColor(layer), g);
+            List<Relation> selectedRelation = landRelations.stream().filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
+            drawLands(selectedRelation, giveColor(layer), g);
 
             if (layer.equals("water")){
-                drawLandSPlural(waterRelations, giveColor(layer), g);
-                drawRoadSPlural(waterWae, giveColor(layer), g);
+                drawLands(waterRelations, giveColor(layer), g);
+                drawRoads(waterWae, giveColor(layer), g);
             }
         }
 
@@ -149,16 +152,16 @@ public class MapRenderer {
     }
 
     private BoundingBox tile2boundingBox(int x, int y, int zoom) {
-        BoundingBox bb = new BoundingBox();
-        bb.north = tile2lat(y, zoom);
-        bb.south = tile2lat(y + 1, zoom);
-        bb.west = tile2lon(x, zoom);
-        bb.east = tile2lon(x + 1, zoom);
-        return bb;
+        BoundingBox boundingBox = new BoundingBox();
+        boundingBox.north = tile2lat(y, zoom);
+        boundingBox.south = tile2lat(y + 1, zoom);
+        boundingBox.west = tile2lon(x, zoom);
+        boundingBox.east = tile2lon(x + 1, zoom);
+        return boundingBox;
     }
 
     static double tile2lon(int x, int z) {
-        return x/Math.pow(2.0, z) * 360 - 180;
+        return x / Math.pow(2.0, z) * 360 - 180;
     }
 
     static double tile2lat(int y, int z) {
@@ -174,46 +177,47 @@ public class MapRenderer {
         return (int)(((lon - min_lon) / (max_lon - min_lon)) * tileSize);
     }
 
-    private void drawRoad(List<Node> ways, Color color, Graphics2D g) {
-        Coordinate start_coord = null;
-        Coordinate start_coord2 = null;
-        Coordinate last_coord = null;
-        int i = 0;
-        for (Node way : ways) {
-            if (way != null) {
-                if (i == 0) {
-                    start_coord2 = new Coordinate(way.lat, way.lon);
+    private void drawRoad(List<Node> nodes, Color color, Graphics2D g) {
+        if (nodes == null || nodes.isEmpty())
+            throw new IllegalArgumentException("List of nodes should never be empty or null!");
+
+        try {
+
+            Node tmpNode = nodes.get(0);
+            Coordinate startCoordinate = new Coordinate(tmpNode.getLat(), tmpNode.getLon());
+
+            tmpNode = nodes.get(nodes.size() - 1);
+            Coordinate endCoordinate = new Coordinate(tmpNode.getLat(), tmpNode.getLon());
+
+            // Closed polygon
+            if (startCoordinate.equals(endCoordinate)) {
+                g.setColor(color);
+                g.fill(nodelistToPolygon(nodes));
+            }
+
+            startCoordinate = null;
+            for (Node node : nodes) {
+                if (node != null) {
+                    Coordinate coordinate = new Coordinate(transLat(node.getLat()), transLon(node.getLon()));
+                    if (startCoordinate != null) {
+                        g.setColor(color);
+                        g.drawLine((int) startCoordinate.x, (int) startCoordinate.y, (int) coordinate.x, (int) coordinate.y);
+                    }
+                    startCoordinate = coordinate;
                 }
-                if (i == (ways.size() - 1)) {
-                    last_coord = new Coordinate(way.lat, way.lon);
-                }
-                i++;
             }
         }
-
-        // TODO: Find better solution
-        if (start_coord2 != null && start_coord2.equals(last_coord)) {
-            g.setColor(color);
-            g.fill(nodelistToPoly(ways));
+        catch (Exception ex) {
+            ex.printStackTrace(System.out);
         }
 
-        for (Node way : ways) {
-            if (way != null) {
-                Coordinate coordinate = new Coordinate(transLat(way.lat), transLon(way.lon));
-                if (start_coord != null) {
-                    g.setColor(color);
-                    g.drawLine((int) start_coord.x, (int) start_coord.y, (int) coordinate.x, (int) coordinate.y);
-                }
-                start_coord = coordinate;
-            }
-        }
     }
 
     static double maxLat(List<Node> nodeLat) {
         double max_lat = 0;
         for (Node node : nodeLat) {
-            if (node.lat > max_lat) {
-                max_lat = node.lat;
+            if (node.getLat() > max_lat) {
+                max_lat = node.getLat();
             }
         }
         return max_lat;
@@ -222,8 +226,8 @@ public class MapRenderer {
     static double maxLon(List<Node> nodeLon) {
         double max_lon = 0;
         for (Node node : nodeLon) {
-            if (node.lon > max_lon) {
-                max_lon = node.lon;
+            if (node.getLon() > max_lon) {
+                max_lon = node.getLon();
             }
         }
         return max_lon;
@@ -232,8 +236,8 @@ public class MapRenderer {
     static double minLon(List<Node> nodeLon) {
         double min_lon = 0xB00B5;
         for (Node node : nodeLon) {
-            if (node.lon < min_lon) {
-                min_lon = node.lon;
+            if (node.getLon() < min_lon) {
+                min_lon = node.getLon();
             }
         }
         return min_lon;
@@ -242,29 +246,28 @@ public class MapRenderer {
     static double minLat(List<Node> nodeLat) {
         double min_lat = 0xB00B5;
         for (Node node : nodeLat) {
-            if (node.lat < min_lat) {
-                min_lat = node.lat;
+            if (node.getLat() < min_lat) {
+                min_lat = node.getLat();
             }
         }
         return min_lat;
     }
 
-    public Polygon nodelistToPoly(List<Node> nodeList) {
-        Polygon polygon = new Polygon();
+    public Polygon nodelistToPolygon(List<Node> nodeList) {
         int[] x = new int[nodeList.size()];
         int[] y = new int[nodeList.size()];
 
         for (int i = 0; i < nodeList.size(); i++){
             Node node = nodeList.get(i);
-            x[i] = transLon(node.lon);
-            y[i] = transLat(node.lat);
+            x[i] = transLon(node.getLon());
+            y[i] = transLat(node.getLat());
         }
         return new Polygon(y, x ,nodeList.size());
     }
 
-    private void drawRoadSPlural(List<Way> wayList, Color color, Graphics2D g) {
-        for (Way way : wayList) {
-            drawRoad(way.getNodeWayList().stream().toList(), color, g);
+    private void drawRoads(List<Way> ways, Color color, Graphics2D g) {
+        for (Way way : ways) {
+            drawRoad(way.getListOfNodes(), color, g);
         }
     }
 
@@ -281,8 +284,8 @@ public class MapRenderer {
         g.fill(area);
     }
 
-    private void drawLandSPlural(List<Relation> relationList, Color color, Graphics2D g) {
-        for (Relation relation : relationList) {
+    private void drawLands(List<Relation> relations, Color color, Graphics2D g) {
+        for (Relation relation : relations) {
             drawLand(relation.getInnerPolygons(), relation.getOuterPolygons(), color, g);
         }
     }
@@ -300,25 +303,25 @@ public class MapRenderer {
 
     public BufferedImage flipImageCounterClockwise(BufferedImage flipped) {
         for (int i = 0; i < 3; i++){
-            flipped = flipImag(flipped);
+            flipped = flipImage(flipped);
         }
         return flipped;
     }
 
-    public BufferedImage flipImag(BufferedImage imag) {
+    public BufferedImage flipImage(BufferedImage image) {
         int width = tileSize;
         int height = tileSize;
 
-        BufferedImage flipped = new BufferedImage(width, height, imag.getType());
-        Graphics2D g2 = flipped.createGraphics();
+        BufferedImage flippedImage = new BufferedImage(width, height, image.getType());
+        Graphics2D g2 = flippedImage.createGraphics();
 
         AffineTransform transform = new AffineTransform();
         transform.translate(height, 0);
         transform.rotate(Math.toRadians(90));
 
         g2.setTransform(transform);
-        g2.drawImage(imag, 0, 0, null);
+        g2.drawImage(image, 0, 0, null);
 
-        return flipped;
+        return flippedImage;
     }
 }
