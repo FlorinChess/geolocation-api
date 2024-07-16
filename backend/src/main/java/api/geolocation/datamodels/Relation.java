@@ -33,11 +33,11 @@ public class Relation implements IOSMDataModel {
         for (int i = 0; i < members.size();) {
             ClosedCircleResult closedCircle = getNextClosed(i, members);
 
-            if (closedCircle != null && closedCircle.lastRole.equals("inner")) {
-                innerPolygons.add(closedCircle.polygon);
+            if (closedCircle != null && closedCircle.getLastRole().equals("inner")) {
+                innerPolygons.add(closedCircle.getPolygon());
             }
 
-            i = (int) (closedCircle != null ? closedCircle.lastMemberIndex + 1 : i + 1);
+            i = (int) (closedCircle != null ? closedCircle.getLastMemberIndex() + 1 : i + 1);
         }
         return innerPolygons;
     }
@@ -48,11 +48,11 @@ public class Relation implements IOSMDataModel {
         for (int i = 0; i < members.size();) {
             ClosedCircleResult closedCircle = getNextClosed(i, members);
 
-            if (closedCircle != null && closedCircle.lastRole.equals("outer")) {
-                outerPolygons.add(closedCircle.polygon);
+            if (closedCircle != null && closedCircle.getLastRole().equals("outer")) {
+                outerPolygons.add(closedCircle.getPolygon());
             }
 
-            i = (int) (closedCircle != null ? closedCircle.lastMemberIndex + 1 : i + 1);
+            i = (int) (closedCircle != null ? closedCircle.getLastMemberIndex() + 1 : i + 1);
         }
         return outerPolygons;
     }
@@ -67,7 +67,7 @@ public class Relation implements IOSMDataModel {
                 ClosedCircleResult closedCircle = getNextClosed(i, members);
 
                 if (closedCircle != null) {
-                    if (closedCircle.lastRole.equals("outer")) {
+                    if (closedCircle.getLastRole().equals("outer")) {
                         if (outer != null) {
                             var polygons = new ArrayList<Polygon>();
                             polygons.add(outer);
@@ -76,13 +76,13 @@ public class Relation implements IOSMDataModel {
                             multiPolygons.add(buildMultipolygon(polygons));
                             inners.clear();
                         }
-                        outer = closedCircle.polygon;
+                        outer = closedCircle.getPolygon();
                     }
-                    else if (closedCircle.lastRole.equals("inner")) {
-                        inners.add(closedCircle.polygon);
+                    else if (closedCircle.getLastRole().equals("inner")) {
+                        inners.add(closedCircle.getPolygon());
                     }
 
-                    i = (int) (closedCircle.lastMemberIndex + 1);
+                    i = (int) (closedCircle.getLastMemberIndex() + 1);
                 }
                 else {
                     throw new RuntimeException("Error when generating geometry for relation with id: " + id);
