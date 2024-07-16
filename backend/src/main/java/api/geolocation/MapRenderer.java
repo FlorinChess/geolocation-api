@@ -34,8 +34,8 @@ public class MapRenderer {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-        var waysMap = MapServiceServer.waysMap;
-        var relationsMap = MapServiceServer.relationsMap;
+        var waysMap = dataStore.getWays();
+        var relationsMap = dataStore.getRelations();
         g.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
 
         g.setColor(Color.WHITE);
@@ -216,8 +216,8 @@ public class MapRenderer {
     static double maxLat(List<Node> nodeLat) {
         double maximumLatitude = 0;
         for (Node node : nodeLat) {
-            if (node.getLat() > max_lat) {
-                max_lat = node.getLat();
+            if (node.getLat() > maximumLatitude) {
+                maximumLatitude = node.getLat();
             }
         }
         return maximumLatitude;

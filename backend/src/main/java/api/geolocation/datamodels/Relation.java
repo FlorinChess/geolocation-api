@@ -1,6 +1,7 @@
 package api.geolocation.datamodels;
+
+import api.geolocation.DataStore;
 import api.geolocation.IOSMDataModel;
-import api.geolocation.MapServiceServer;
 import lombok.Data;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.operation.linemerge.LineMerger;
@@ -111,7 +112,7 @@ public class Relation implements IOSMDataModel {
             geometryArray[i] = geometries.get(i);
         }
 
-        return new GeometryCollection(geometryArray, MapServiceServer.geometryFactory);
+        return new GeometryCollection(geometryArray, DataStore.geometryFactory);
     }
 
     private static ClosedCircleResult getNextClosed(int i, List<Member> members) {
@@ -120,12 +121,12 @@ public class Relation implements IOSMDataModel {
 
         for (; i < members.size(); i++) {
             Member member = members.get(i);
-            Way way = MapServiceServer.getRelationWayById(member.ref);
+            Way way = DataStore.getInstance().getWaysRelationMap().get(member.ref);
 
             if (way == null)
                 continue;
 
-            var geometry = way.toGeometry();
+            Geometry geometry = way.toGeometry();
 
             if (geometry.getGeometryType().equals(Geometry.TYPENAME_POLYGON)) {
                 return new ClosedCircleResult((Polygon) geometry, member.role, i);
@@ -143,9 +144,9 @@ public class Relation implements IOSMDataModel {
             try {
                 var lineString = (LineString) mergedLinesCollection.stream().findFirst().get();
 
-                LinearRing linearRing = MapServiceServer.geometryFactory.createLinearRing(lineString.getCoordinates());
+                LinearRing linearRing = DataStore.geometryFactory.createLinearRing(lineString.getCoordinates());
 
-                Polygon polygon = new Polygon(linearRing, null, MapServiceServer.geometryFactory);
+                Polygon polygon = new Polygon(linearRing, null, DataStore.geometryFactory);
                 return new ClosedCircleResult(polygon, lastRole, i);
             }
             catch (Exception ex) {
@@ -163,6 +164,6 @@ public class Relation implements IOSMDataModel {
             polygonArray[i] = polygons.get(i);
         }
 
-        return new MultiPolygon(polygonArray, MapServiceServer.geometryFactory);
+        return new MultiPolygon(polygonArray, DataStore.geometryFactory);
     }
 }

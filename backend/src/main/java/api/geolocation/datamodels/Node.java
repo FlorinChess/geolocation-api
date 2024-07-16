@@ -1,7 +1,7 @@
 package api.geolocation.datamodels;
 
+import api.geolocation.DataStore;
 import api.geolocation.IOSMDataModel;
-import api.geolocation.MapServiceServer;
 import lombok.Data;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -33,6 +33,6 @@ public class Node implements IOSMDataModel {
         Coordinate[] coordinates = new Coordinate[] { new Coordinate(lon, lat) };
 
         return new Point(CoordinateArraySequenceFactory.instance()
-                .create(coordinates), MapServiceServer.geometryFactory);
+                .create(coordinates), DataStore.geometryFactory);
     }
 }

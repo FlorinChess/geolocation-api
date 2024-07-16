@@ -10,7 +10,7 @@ import java.util.Map;
 public class AmenityModel {
     private long id;
     private Geometry geometry;
-    Map<String, String> tags;
+    private Map<String, String> tags;
 
     public AmenityModel(long id, Geometry geometry, Map<String, String> tags) {
         this.geometry = geometry;

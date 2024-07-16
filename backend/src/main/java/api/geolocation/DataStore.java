@@ -2,6 +2,7 @@ package api.geolocation;
 
 import api.geolocation.datamodels.*;
 import lombok.Data;
+import org.locationtech.jts.geom.GeometryFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,12 +10,15 @@ import java.util.Map;
 
 @Data
 public class DataStore {
-    public static DataStore instance = null;
+    public static final GeometryFactory geometryFactory = new GeometryFactory();
+    private static DataStore instance = null;
     private final HashMap<Long, Node> nodes;
     private final HashMap<Long, Way> ways;
     private final HashMap<Long, Relation> relations;
     private final HashMap<Long, AmenityModel> amenities;
     private final HashMap<Long, RoadModel> roads;
+    private final HashMap<Long, Node> roadsNodesMap;
+    private final HashMap<Long, Way> waysRelationMap;
 
     private DataStore() {
         nodes = new HashMap<>();
@@ -22,6 +26,8 @@ public class DataStore {
         relations = new HashMap<>();
         amenities = new HashMap<>();
         roads = new HashMap<>();
+        roadsNodesMap = new HashMap<>();
+        waysRelationMap = new HashMap<>();
     }
 
     public void addNode(long id, double lat, double lon, Map<String, String> tags) {
