@@ -110,10 +110,6 @@
 
     <repositories>
         <repository>
-            <id>org.geotools</id>
-            <url>https://repo.osgeo.org/repository/release/</url>
-        </repository>
-        <repository>
             <id>central</id>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
