@@ -18,13 +18,13 @@ import java.util.List;
 
 public class MapRenderer {
 
-    double max_lon;
-    double max_lat;
-    double min_lon;
-    double min_lat;
+    private double maxLon;
+    private double maxLat;
+    private double minLon;
+    private double minLat;
 
-    int tileSize = 512;
-
+    private final int tileSize = 512;
+    private final DataStore dataStore = DataStore.getInstance();
 
     public BufferedImage renderTile(int zoom, int x, int y, String layers) throws IOException {
         BufferedImage image = new BufferedImage(tileSize, tileSize, BufferedImage.TYPE_INT_RGB);
@@ -43,10 +43,10 @@ public class MapRenderer {
 
         BoundingBox bbox = tile2boundingBox(x, y, zoom);
 
-        max_lat = bbox.north;
-        max_lon = bbox.east;
-        min_lon = bbox.west;
-        min_lat = bbox.south;
+        maxLat = bbox.north;
+        maxLon = bbox.east;
+        minLon = bbox.west;
+        minLat = bbox.south;
 
         String[] layersArray = layers.split(",");
 
@@ -170,11 +170,11 @@ public class MapRenderer {
     }
 
     int transLat(double lat) {
-        return (int)(((lat - min_lat) / (max_lat - min_lat)) * tileSize);
+        return (int)(((lat - minLat) / (maxLat - minLat)) * tileSize);
     }
 
     int transLon(double lon) {
-        return (int)(((lon - min_lon) / (max_lon - min_lon)) * tileSize);
+        return (int)(((lon - minLon) / (maxLon - minLon)) * tileSize);
     }
 
     private void drawRoad(List<Node> nodes, Color color, Graphics2D g) {
@@ -214,43 +214,43 @@ public class MapRenderer {
     }
 
     static double maxLat(List<Node> nodeLat) {
-        double max_lat = 0;
+        double maximumLatitude = 0;
         for (Node node : nodeLat) {
             if (node.getLat() > max_lat) {
                 max_lat = node.getLat();
             }
         }
-        return max_lat;
+        return maximumLatitude;
     }
 
     static double maxLon(List<Node> nodeLon) {
-        double max_lon = 0;
+        double maximumLongitude = 0;
         for (Node node : nodeLon) {
-            if (node.getLon() > max_lon) {
-                max_lon = node.getLon();
+            if (node.getLon() > maximumLongitude) {
+                maximumLongitude = node.getLon();
             }
         }
-        return max_lon;
+        return maximumLongitude;
     }
 
     static double minLon(List<Node> nodeLon) {
-        double min_lon = 0xB00B5;
+        double minimumLongitude = 0xB00B5;
         for (Node node : nodeLon) {
-            if (node.getLon() < min_lon) {
-                min_lon = node.getLon();
+            if (node.getLon() < minimumLongitude) {
+                minimumLongitude = node.getLon();
             }
         }
-        return min_lon;
+        return minimumLongitude;
     }
 
     static double minLat(List<Node> nodeLat) {
-        double min_lat = 0xB00B5;
+        double minimumLatitude = 0xB00B5;
         for (Node node : nodeLat) {
-            if (node.getLat() < min_lat) {
-                min_lat = node.getLat();
+            if (node.getLat() < minimumLatitude) {
+                minimumLatitude = node.getLat();
             }
         }
-        return min_lat;
+        return minimumLatitude;
     }
 
     public Polygon nodelistToPolygon(List<Node> nodeList) {
