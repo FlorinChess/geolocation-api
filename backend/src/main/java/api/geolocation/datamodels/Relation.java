@@ -57,7 +57,7 @@ public class Relation implements IOSMDataModel {
         return outerPolygons;
     }
 
-    public GeometryCollection toGeometry() {
+    public GeometryCollection toGeometry() throws RuntimeException {
         if (tags.containsValue("multipolygon")) {
             List<MultiPolygon> multiPolygons = new ArrayList<>();
             List<Polygon> inners = new ArrayList<>();
@@ -100,10 +100,10 @@ public class Relation implements IOSMDataModel {
             return buildGeometryCollection(multiPolygons);
         }
         else {
+            // TODO: split into 2 separate functions
             return buildGeometryCollection(members);
         }
     }
-
 
     private GeometryCollection buildGeometryCollection(List<? extends Geometry> geometries) {
         Geometry[] geometryArray = new Geometry[geometries.size()];
@@ -115,7 +115,7 @@ public class Relation implements IOSMDataModel {
         return new GeometryCollection(geometryArray, DataStore.geometryFactory);
     }
 
-    private static ClosedCircleResult getNextClosed(int i, List<Member> members) {
+    private ClosedCircleResult getNextClosed(int i, List<Member> members) {
         String lastRole = "";
         List<Geometry> geometries = new ArrayList<>();
 
@@ -124,7 +124,7 @@ public class Relation implements IOSMDataModel {
             Way way = DataStore.getInstance().getWaysRelationMap().get(member.ref);
 
             if (way == null)
-                continue;
+                throw new RuntimeException("Relation (id = "  + id + ") is missing referenced way (ref = " + member.ref + ")!");
 
             Geometry geometry = way.toGeometry();
 
@@ -135,7 +135,6 @@ public class Relation implements IOSMDataModel {
             geometries.add(geometry);
             lastRole = member.role;
         }
-
 
         LineMerger lineMerger = new LineMerger();
         lineMerger.add(geometries);

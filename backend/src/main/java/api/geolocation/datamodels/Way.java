@@ -19,7 +19,7 @@ public class Way implements IOSMDataModel {
         nodeRefs = new ArrayList<>();
     }
 
-    public Way(long id,  Map<String, String> tags, List<Long> nodeRefs) {
+    public Way(long id, Map<String, String> tags, List<Long> nodeRefs) {
         this.id = id;
         this.tags = tags;
         this.nodeRefs = nodeRefs;
@@ -33,7 +33,10 @@ public class Way implements IOSMDataModel {
         return nodeWay;
     }
 
-    public Geometry toGeometry() {
+    public Geometry toGeometry() throws RuntimeException {
+        if (nodeRefs.isEmpty())
+            throw new RuntimeException("Way with id " + id + " has no referenced nodes!");
+
         Coordinate[] coordinates = new Coordinate[nodeRefs.size()];
         int i = 0;
         for (var ref : nodeRefs){
