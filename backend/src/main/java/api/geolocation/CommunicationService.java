@@ -21,23 +21,8 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
     private MathTransform transform = null;
     private final GeoJsonWriter writer = new GeoJsonWriter();
     private final MapRenderer mapRenderer = new MapRenderer();
+    private final DataStore dataStore = DataStore.getInstance();
 
-    private MathTransform getMathTransform() {
-        try {
-            if (transform == null) {
-                CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:4326");
-                CoordinateReferenceSystem targetCRS = CRS.decode("EPSG:31256");
-
-                transform = CRS.findMathTransform(sourceCRS, targetCRS, true);
-            }
-            return transform;
-        }
-        catch (Exception ex) {
-            ex.printStackTrace(System.out);
-            return null;
-
-        }
-    }
     @Override
     public void getAmenities(AmenitiesRequest request, StreamObserver<AmenitiesResponse> observer) {
         MapLogger.backendLogAmenitiesRequest();
@@ -46,7 +31,8 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
         var responseBuilder = AmenitiesResponse.newBuilder();
 
-        if (request.getBboxTlX() == 0 && request.getBboxTlY() == 0 && request.getBboxBrX() == 0 && request.getBboxBrY() == 0) {
+        if (request.getBboxTlX() == 0 && request.getBboxTlY() == 0 &&
+            request.getBboxBrX() == 0 && request.getBboxBrY() == 0) {
             try {
                 Node nodeFromParameters = new Node();
 
@@ -55,7 +41,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
                 Geometry geometryPoint = JTS.transform(nodeFromParameters.toGeometry(), getMathTransform());
 
-                for (var entry : MapServiceServer.amenities.entrySet()) {
+                for (var entry : dataStore.getAmenities().entrySet()) {
                     var amenityModel = entry.getValue();
                     try {
                         var transformedGeometry = JTS.transform(amenityModel.getGeometry(), getMathTransform());
@@ -77,15 +63,15 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
             }
         }
         else {
-            Envelope boundingBox = MapServiceServer.buildBoundingBox(
+            Envelope boundingBox = buildBoundingBox(
                     request.getBboxTlX(),
                     request.getBboxTlY(),
                     request.getBboxBrX(),
                     request.getBboxBrY());
 
-            var boundingBoxPolygon = MapServiceServer.geometryFactory.toGeometry(boundingBox);
+            var boundingBoxPolygon = DataStore.geometryFactory.toGeometry(boundingBox);
 
-            for (var entry : MapServiceServer.amenities.entrySet()) {
+            for (var entry : dataStore.getAmenities().entrySet()) {
                 AmenityModel amenityModel = entry.getValue();
 
                 try {
@@ -130,7 +116,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
         MapLogger.backendLogAmenityRequest((int)id);
 
-        var amenityModel = MapServiceServer.getAmenityModelById(id);
+        var amenityModel = dataStore.getAmenities().get(id);
         var responseBuilder = AmenityResponse.newBuilder();
 
         if (amenityModel != null) {
@@ -168,15 +154,15 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
         var roadsFound = new ArrayList<RoadModel>();
 
-        var boundingBox = MapServiceServer.buildBoundingBox(
+        var boundingBox = buildBoundingBox(
                 request.getBboxTlX(),
                 request.getBboxTlY(),
                 request.getBboxBrX(),
                 request.getBboxBrY());
 
-        var boundingBoxPolygon = MapServiceServer.geometryFactory.toGeometry(boundingBox);
+        var boundingBoxPolygon = DataStore.geometryFactory.toGeometry(boundingBox);
 
-        for (var entry : MapServiceServer.roads.entrySet()) {
+        for (var entry : dataStore.getRoads().entrySet()) {
             RoadModel roadModel = entry.getValue();
 
             try {
@@ -218,7 +204,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
         MapLogger.backendLogRoadRequest((int) id);
 
-        var road = MapServiceServer.getRoadModelById(id);
+        var road = dataStore.getRoads().get(id);
         var responseBuilder = RoadResponse.newBuilder();
 
         if (road != null) {
@@ -307,6 +293,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         observer.onNext(response);
         observer.onCompleted();
     }
+
     private Amenity buildResponseAmenity(AmenityModel amenityModel){
         var amenityBuilder = Amenity.newBuilder();
 
@@ -347,5 +334,26 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         roadBuilder.putAllTags(roadModel.getTags());
         roadBuilder.addAllChildIds(roadModel.getNodeRefs());
         return roadBuilder.build();
+    }
+
+    private Envelope buildBoundingBox(double bboxTlX, double bboxTlY, double bboxBrX, double bboxBrY) {
+        return new Envelope(bboxTlX, bboxBrX, bboxBrY, bboxTlY);
+    }
+
+    private MathTransform getMathTransform() {
+        try {
+            if (transform == null) {
+                CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:4326");
+                CoordinateReferenceSystem targetCRS = CRS.decode("EPSG:31256");
+
+                transform = CRS.findMathTransform(sourceCRS, targetCRS, true);
+            }
+            return transform;
+        }
+        catch (Exception ex) {
+            ex.printStackTrace(System.out);
+            return null;
+
+        }
     }
 }
