@@ -12,7 +12,7 @@
     <properties>
         <javaVersion>21</javaVersion>
         <protobuf.version>3.21.7</protobuf.version>
-        <grpc.version>1.56.1</grpc.version>
+        <grpc.version>1.65.0</grpc.version>
         <gt.version>29.1</gt.version>
     </properties>
 
@@ -112,6 +112,10 @@
         <repository>
             <id>central</id>
             <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <repository>
+            <id>Terrestris</id>
+            <url>https://nexus.terrestris.de/repository/public/</url>
         </repository>
     </repositories>
 
