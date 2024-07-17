@@ -3,7 +3,6 @@ package api.geolocation.datamodels;
 import java.util.*;
 
 import api.geolocation.DataStore;
-import api.geolocation.IOSMDataModel;
 import lombok.Data;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.impl.CoordinateArraySequenceFactory;

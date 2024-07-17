@@ -1,7 +1,6 @@
 package api.geolocation.datamodels;
 
 import api.geolocation.DataStore;
-import api.geolocation.IOSMDataModel;
 import lombok.Data;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
