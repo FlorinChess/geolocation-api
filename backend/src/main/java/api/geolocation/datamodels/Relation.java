@@ -96,15 +96,16 @@ public class Relation implements IOSMDataModel {
                 multiPolygons.add(buildMultipolygon(polygons));
                 inners.clear();
             }
-            return buildGeometryCollection(multiPolygons);
+            return multiPolygonsToGeometryCollection(multiPolygons);
         }
         else {
             // TODO: split into 2 separate functions
-            return buildGeometryCollection(members);
+//            return buildGeometryCollection(members);
+            return null;
         }
     }
 
-    private GeometryCollection buildGeometryCollection(List<? extends Geometry> geometries) {
+    private GeometryCollection multiPolygonsToGeometryCollection(List<MultiPolygon> geometries) {
         Geometry[] geometryArray = new Geometry[geometries.size()];
 
         for (int i = 0; i < geometries.size(); i++) {
@@ -114,25 +115,29 @@ public class Relation implements IOSMDataModel {
         return new GeometryCollection(geometryArray, DataStore.geometryFactory);
     }
 
+    private GeometryCollection membersToGeometryCollection(List<Member> members) {
+        return null;
+    }
+
     private ClosedCircleResult getNextClosed(int i, List<Member> members) {
         String lastRole = "";
         List<Geometry> geometries = new ArrayList<>();
 
         for (; i < members.size(); i++) {
             Member member = members.get(i);
-            Way way = DataStore.getInstance().getWaysRelationMap().get(member.ref);
+            Way way = DataStore.getInstance().getWaysRelationMap().get(member.getRef());
 
             if (way == null)
-                throw new RuntimeException("Relation (id = "  + id + ") is missing referenced way (ref = " + member.ref + ")!");
+                throw new RuntimeException("Relation (id = "  + id + ") is missing referenced way (ref = " + member.getRef() + ")!");
 
             Geometry geometry = way.toGeometry();
 
             if (geometry.getGeometryType().equals(Geometry.TYPENAME_POLYGON)) {
-                return new ClosedCircleResult((Polygon) geometry, member.role, i);
+                return new ClosedCircleResult((Polygon) geometry, member.getRole(), i);
             }
 
             geometries.add(geometry);
-            lastRole = member.role;
+            lastRole = member.getRole();
         }
 
         LineMerger lineMerger = new LineMerger();
