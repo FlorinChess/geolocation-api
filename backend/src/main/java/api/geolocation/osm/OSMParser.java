@@ -7,7 +7,7 @@ import api.geolocation.datamodels.Way;
 import api.geolocation.datamodels.AmenityModel;
 import api.geolocation.datamodels.Node;
 import api.geolocation.datamodels.RoadModel;
-import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Geometry;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
@@ -21,7 +21,6 @@ import java.util.Map;
 public class OSMParser {
     private final String filePath;
     private final DataStore dataStore;
-    private final GeometryFactory geometryFactory;
     private DocumentBuilderFactory documentBuilderFactory;
 
     private int amenityCount = 0;
@@ -30,7 +29,6 @@ public class OSMParser {
     public OSMParser(String filePath) {
         this.filePath = filePath;
         this.dataStore = DataStore.getInstance();
-        this.geometryFactory = DataStore.geometryFactory;
         initialize();
     }
 
@@ -206,7 +204,7 @@ public class OSMParser {
 
                     // Set members
                     if (currentChildNode.getNodeName().equals("member")) {
-                        Member newMember = new Member(geometryFactory);
+                        Member newMember = new Member();
                         newMember.setRef(Long.parseLong(childNodeAttributes.item(0).getNodeValue()));
                         newMember.setRole(childNodeAttributes.item(1).getNodeValue());
                         newMember.setType(childNodeAttributes.item(2).getNodeValue());
