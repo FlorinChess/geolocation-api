@@ -62,14 +62,14 @@ public class OSMParser {
     }
 
     private void parseNodes(NodeList nodes, long count) {
-        try {
-            int nodeAmenitiesCount = 0;
-            int nodeRoadsCount = 0;
+        int nodeAmenitiesCount = 0;
+        int nodeRoadsCount = 0;
 
-            for (int i = 0; i < count; i++) {
-                org.w3c.dom.Node currentNode = nodes.item(i);
-                var attributes = currentNode.getAttributes();
+        for (int i = 0; i < count; i++) {
+            org.w3c.dom.Node currentNode = nodes.item(i);
+            var attributes = currentNode.getAttributes();
 
+            try {
                 long id = Long.parseLong(attributes.item(0).getNodeValue());
                 double lat = Double.parseDouble(attributes.item(1).getNodeValue());
                 double lon = Double.parseDouble(attributes.item(2).getNodeValue());
@@ -88,40 +88,43 @@ public class OSMParser {
                     tags.put(key, val);
                 }
 
-                dataStore.addNode(id, lat, lon, tags);
+                Node newNode = new Node(id, lat, lon, tags);
 
                 if (tags.containsKey("amenity")) {
-                    dataStore.getAmenities().put(id, new AmenityModel(dataStore.getNodes().get(id)));
+                    Geometry geometry = newNode.toGeometry();
+                    dataStore.getAmenities().put(id, new AmenityModel(id, geometry, tags));
                     nodeAmenitiesCount++;
                 }
 
                 if (tags.containsKey("highway")) {
                     // TODO: nodeRefs
                     // TODO: might be able to remove this
-                    dataStore.getRoads().put(id, new RoadModel(dataStore.getNodes().get(id), new ArrayList<>()));
+                    Geometry geometry = newNode.toGeometry();
+                    dataStore.getRoads().put(id, new RoadModel(id, geometry, tags, new ArrayList<>()));
                     nodeRoadsCount++;
                 }
+                dataStore.addNode(id, lat, lon, tags);
             }
+            catch (NumberFormatException ex) {
+                ex.printStackTrace(System.out);
+                System.out.println("Node at index " + i + " contains attributes that cannot be converted to their respective numeric representations!");
+            }
+        }
 
-            System.out.println("Number of nodes representing amenities: " + nodeAmenitiesCount);
-            System.out.println("Number of nodes representing roads:     " + nodeRoadsCount);
-            amenityCount += nodeAmenitiesCount;
-            roadCount += nodeRoadsCount;
-        }
-        catch (Exception e) {
-            e.printStackTrace(System.out);
-            throw e;
-        }
+        System.out.println("Number of nodes representing amenities: " + nodeAmenitiesCount);
+        System.out.println("Number of nodes representing roads:     " + nodeRoadsCount);
+        amenityCount += nodeAmenitiesCount;
+        roadCount += nodeRoadsCount;
     }
 
     private void parseWays(NodeList ways, long count) {
-        try {
-            int wayAmenitiesCount = 0;
-            int wayRoadsCount = 0;
+        int wayAmenitiesCount = 0;
+        int wayRoadsCount = 0;
 
-            for (int i = 0; i < count; i++) {
-                org.w3c.dom.Node currentNode = ways.item(i);
+        for (int i = 0; i < count; i++) {
+            org.w3c.dom.Node currentNode = ways.item(i);
 
+            try {
                 Way newWay = new Way();
                 newWay.setId(Long.parseLong(currentNode.getAttributes().item(0).getNodeValue()));
 
@@ -153,44 +156,54 @@ public class OSMParser {
                 }
 
                 if (newWay.getTags().containsKey("amenity")) {
-                    wayAmenitiesCount++;
-
                     var geometry = newWay.toGeometry();
+
                     AmenityModel newAmenity = new AmenityModel(newWay.getId(), geometry, newWay.getTags());
                     dataStore.getAmenities().put(newWay.getId(), newAmenity);
+
+                    wayAmenitiesCount++;
                 }
 
                 if (newWay.getTags().containsKey("highway")) {
-                    wayRoadsCount++;
-
                     var geometry = newWay.toGeometry();
+
                     RoadModel newRoad = new RoadModel(newWay.getId(), geometry, newWay.getTags(), newWay.getNodeRefs());
                     dataStore.getRoads().put(newWay.getId(), newRoad);
+
+                    wayRoadsCount++;
                 }
 
                 dataStore.getWays().put(newWay.getId(), newWay);
             }
-
-            System.out.println("Number of ways representing amenities: " + wayAmenitiesCount);
-            System.out.println("Number of ways representing roads:     " + wayRoadsCount);
-
-            amenityCount += wayAmenitiesCount;
-            roadCount += wayRoadsCount;
+            catch (NumberFormatException ex) {
+                System.out.println("Way at index " + i + " contains attributes that cannot be converted to their respective numeric representations!");
+                ex.printStackTrace(System.out);
+            }
+            catch (RuntimeException ex) {
+                System.out.println("Way at index  " + i + " does not form a valid Geometry!");
+                ex.printStackTrace(System.out);
+            }
+            catch (Exception ex) {
+                ex.printStackTrace(System.out);
+            }
         }
-        catch (Exception e) {
-            e.printStackTrace(System.out);
-            throw e;
-        }
+
+        System.out.println("Number of ways representing amenities: " + wayAmenitiesCount);
+        System.out.println("Number of ways representing roads:     " + wayRoadsCount);
+
+        amenityCount += wayAmenitiesCount;
+        roadCount += wayRoadsCount;
     }
 
     private void parseRelations(NodeList relations, long count) {
-        try {
-            int relationAmenityCount = 0;
-            int relationRoadsCount = 0;
+        int relationAmenityCount = 0;
+        int relationRoadsCount = 0;
+        int missingReferences = 0;
 
-            for (int i = 0; i < count; i++) {
-                org.w3c.dom.Node currentNode = relations.item(i);
+        for (int i = 0; i < count; i++) {
+            org.w3c.dom.Node currentNode = relations.item(i);
 
+            try {
                 Relation newRelation = new Relation();
                 newRelation.setId(Long.parseLong(currentNode.getAttributes().item(0).getNodeValue()));
 
@@ -218,6 +231,9 @@ public class OSMParser {
                         if (toBeRemoved != null) {
                             dataStore.getWaysRelationMap().put(toBeRemoved.getId(), toBeRemoved);
                         }
+                        else {
+                            missingReferences++;
+                        }
                     }
 
                     // Set tags
@@ -229,43 +245,41 @@ public class OSMParser {
                 }
 
                 if (newRelation.getTags().containsKey("amenity")) {
-                    try {
-                        var geometry = newRelation.toGeometry();
-                        AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
-                        dataStore.getAmenities().put(newRelation.getId(), newAmenity);
-                        relationAmenityCount++;
-                    }
-                    catch (Exception ex) {
-                        ex.printStackTrace(System.out);
-                    }
+                    var geometry = newRelation.toGeometry();
+                    AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
+                    dataStore.getAmenities().put(newRelation.getId(), newAmenity);
+                    relationAmenityCount++;
                 }
 
                 if (newRelation.getTags().containsKey("highway")) {
-                    try {
-                        var geometry = newRelation.toGeometry();
-                        // TODO: nodeRefs
-                        RoadModel newRoad = new RoadModel(newRelation.getId(), geometry, newRelation.getTags(), new ArrayList<>());
-                        dataStore.getRoads().put(newRelation.getId(), newRoad);
-                        relationRoadsCount++;
-                    }
-                    catch (Exception ex) {
-                        ex.printStackTrace(System.out);
-                    }
+                    var geometry = newRelation.toGeometry();
+                    // TODO: nodeRefs
+                    RoadModel newRoad = new RoadModel(newRelation.getId(), geometry, newRelation.getTags(), new ArrayList<>());
+                    dataStore.getRoads().put(newRelation.getId(), newRoad);
+                    relationRoadsCount++;
                 }
 
                 dataStore.getRelations().put(newRelation.getId(), newRelation);
             }
-
-            System.out.println("Number of relations representing amenities: " + relationAmenityCount);
-            System.out.println("Number of relations representing roads:     " + relationRoadsCount);
-
-            amenityCount += relationAmenityCount;
-            roadCount += relationRoadsCount;
+            catch (NumberFormatException ex) {
+                System.out.println("Relation at index " + i + " contains attributes that cannot be converted to their respective numeric representations!");
+                ex.printStackTrace(System.out);
+            }
+            catch (RuntimeException ex) {
+                System.out.println("Relation at index  " + i + " does not form a valid Geometry!");
+                ex.printStackTrace(System.out);
+            }
+            catch (Exception ex) {
+                ex.printStackTrace(System.out);
+            }
         }
-        catch (Exception e) {
-            e.printStackTrace(System.out);
-            throw e;
-        }
+
+        System.out.println("Number of relations representing amenities: " + relationAmenityCount);
+        System.out.println("Number of relations representing roads:     " + relationRoadsCount);
+        System.out.println("Number of missing references:               " + missingReferences);
+
+        amenityCount += relationAmenityCount;
+        roadCount += relationRoadsCount;
     }
 
     private void initialize() {
