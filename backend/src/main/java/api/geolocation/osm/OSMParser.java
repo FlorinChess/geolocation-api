@@ -97,12 +97,11 @@ public class OSMParser {
                 }
 
                 if (tags.containsKey("highway")) {
-                    // TODO: nodeRefs
-                    // TODO: might be able to remove this
                     Geometry geometry = newNode.toGeometry();
                     dataStore.getRoads().put(id, new RoadModel(id, geometry, tags, new ArrayList<>()));
                     nodeRoadsCount++;
                 }
+
                 dataStore.addNode(id, lat, lon, tags);
             }
             catch (NumberFormatException ex) {
@@ -120,8 +119,11 @@ public class OSMParser {
     private void parseWays(NodeList ways, long count) {
         int wayAmenitiesCount = 0;
         int wayRoadsCount = 0;
+        int invalidWays = 0;
 
         for (int i = 0; i < count; i++) {
+            boolean invalid = false;
+
             org.w3c.dom.Node currentNode = ways.item(i);
 
             try {
@@ -145,6 +147,10 @@ public class OSMParser {
                         if (toBeRemoved != null) {
                             dataStore.getRoadsNodesMap().put(toBeRemoved.getId(), toBeRemoved);
                         }
+                        else {
+                            invalid = true;
+                            break;
+                        }
                     }
 
                     if (currentChildNode.getNodeName().equals("tag"))
@@ -153,6 +159,11 @@ public class OSMParser {
                         String val = childNodeAttributes.item(1).getNodeValue();
                         newWay.getTags().put(key, val);
                     }
+                }
+
+                if (invalid) {
+                    invalidWays++;
+                    continue;
                 }
 
                 if (newWay.getTags().containsKey("amenity")) {
@@ -190,6 +201,7 @@ public class OSMParser {
 
         System.out.println("Number of ways representing amenities: " + wayAmenitiesCount);
         System.out.println("Number of ways representing roads:     " + wayRoadsCount);
+        System.out.println("Number of ways with missing nodes:     " + invalidWays);
 
         amenityCount += wayAmenitiesCount;
         roadCount += wayRoadsCount;
@@ -198,10 +210,12 @@ public class OSMParser {
     private void parseRelations(NodeList relations, long count) {
         int relationAmenityCount = 0;
         int relationRoadsCount = 0;
-        int missingReferences = 0;
+        int invalidRelations = 0;
 
         for (int i = 0; i < count; i++) {
             org.w3c.dom.Node currentNode = relations.item(i);
+
+            boolean invalid = false;
 
             try {
                 Relation newRelation = new Relation();
@@ -232,7 +246,8 @@ public class OSMParser {
                             dataStore.getWaysRelationMap().put(toBeRemoved.getId(), toBeRemoved);
                         }
                         else {
-                            missingReferences++;
+                            invalid = true;
+                            break;
                         }
                     }
 
@@ -242,6 +257,11 @@ public class OSMParser {
                         String val = childNodeAttributes.item(1).getNodeValue();
                         newRelation.getTags().put(key, val);
                     }
+                }
+
+                if (invalid) {
+                    invalidRelations++;
+                    continue;
                 }
 
                 if (newRelation.getTags().containsKey("amenity")) {
@@ -274,9 +294,9 @@ public class OSMParser {
             }
         }
 
-        System.out.println("Number of relations representing amenities: " + relationAmenityCount);
-        System.out.println("Number of relations representing roads:     " + relationRoadsCount);
-        System.out.println("Number of missing references:               " + missingReferences);
+        System.out.println("Number of relations representing amenities:  " + relationAmenityCount);
+        System.out.println("Number of relations representing roads:      " + relationRoadsCount);
+        System.out.println("Number of relations with missing references: " + invalidRelations);
 
         amenityCount += relationAmenityCount;
         roadCount += relationRoadsCount;
