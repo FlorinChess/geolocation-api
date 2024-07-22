@@ -27,7 +27,12 @@ public class Way implements IOSMDataModel {
     public List<Node> getListOfNodes() {
         ArrayList<Node> nodeWay = new ArrayList<>();
         for (var ref : nodeRefs) {
-            nodeWay.add(DataStore.getInstance().getRoadsNodesMap().get(ref));
+            Node node = DataStore.getInstance().getRoadsNodesMap().get(ref);
+
+            if (node != null)
+                nodeWay.add(DataStore.getInstance().getRoadsNodesMap().get(ref));
+            else
+                System.out.println("Way.java: node is missing. id = " + ref);
         }
         return nodeWay;
     }
