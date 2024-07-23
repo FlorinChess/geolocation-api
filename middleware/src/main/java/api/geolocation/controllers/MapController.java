@@ -12,6 +12,7 @@ import api.geolocation.exceptions.NotFoundException;
 import com.google.protobuf.ByteString;
 import lombok.SneakyThrows;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,8 @@ import java.util.List;
 
 @RestController
 public class MapController {
+    private final JSONParser jsonParser = new JSONParser();
+
     @SneakyThrows
     @GetMapping( "/amenities" )
     public ResponseEntity<Object> getAmenities(
@@ -288,7 +291,7 @@ public class MapController {
         AmenityResponse response = MapApplication.stub.getAmenityById(request);
 
         if (response.getStatus() == Status.Success) {
-            JSONObject jsonObjectGeometry = (JSONObject) MapApplication.parser.parse(response.getJson());
+            JSONObject jsonObjectGeometry = (JSONObject) jsonParser.parse(response.getJson());
 
             amenity = new api.geolocation.datamodels.Amenity();
             amenity.setId(response.getId());
@@ -315,7 +318,7 @@ public class MapController {
         RoadResponse response = MapApplication.stub.getRoadById(request);
 
         if (response.getStatus() == Status.Success) {
-            JSONObject jsonObjectGeometry = (JSONObject) MapApplication.parser.parse(response.getJson());
+            JSONObject jsonObjectGeometry = (JSONObject) jsonParser.parse(response.getJson());
 
             road = new api.geolocation.datamodels.Road();
             road.setId(response.getId());
@@ -376,8 +379,8 @@ public class MapController {
     }
 
     @SneakyThrows
-    private static void buildAmenityResponse(api.geolocation.Amenity currentAmenity, ArrayList<api.geolocation.datamodels.Amenity> amenitiesList) {
-        JSONObject jsonObjectGeometry = (JSONObject) MapApplication.parser.parse(currentAmenity.getJson());
+    private void buildAmenityResponse(api.geolocation.Amenity currentAmenity, ArrayList<api.geolocation.datamodels.Amenity> amenitiesList) {
+        JSONObject jsonObjectGeometry = (JSONObject) jsonParser.parse(currentAmenity.getJson());
 
         api.geolocation.datamodels.Amenity newAmenity = new api.geolocation.datamodels.Amenity();
 
@@ -469,8 +472,8 @@ public class MapController {
         return roadsList;
     }
 
-    private static void buildRoadResponse(api.geolocation.Road currentRoad, ArrayList<api.geolocation.datamodels.Road> roadsList) throws ParseException {
-        JSONObject jsonObjectGeometry = (JSONObject) MapApplication.parser.parse(currentRoad.getJson());
+    private void buildRoadResponse(api.geolocation.Road currentRoad, ArrayList<api.geolocation.datamodels.Road> roadsList) throws ParseException {
+        JSONObject jsonObjectGeometry = (JSONObject) jsonParser.parse(currentRoad.getJson());
 
         api.geolocation.datamodels.Road newRoad = new api.geolocation.datamodels.Road();
 
