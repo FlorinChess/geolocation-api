@@ -7,13 +7,22 @@ import java.util.logging.Logger;
 
 public class MapServiceServer {
     private final static Logger logger = Logger.getLogger(MapServiceServer.class.getName());
+    private static int port;
+    private static String backendOsmFile;
 
     public static void main(String[] args) {
         logger.info("Starting backend...");
 
-        int port;
-        String backendOsmFile;
+        parseEnvironmentVariables();
 
+        parseOSMFile();
+
+        fixInvalidEntries();
+
+        startServer();
+    }
+
+    private static void parseEnvironmentVariables() {
         try {
             port = Integer.parseInt(System.getenv().getOrDefault("JMAP_BACKEND_PORT", Constants.defaultBackendPort));
             backendOsmFile = System.getenv().getOrDefault("JMAP_BACKEND_OSMFILE", Constants.defaultBackendOsmFile);
@@ -28,14 +37,22 @@ public class MapServiceServer {
             port = Integer.parseInt(Constants.defaultBackendPort);
             backendOsmFile = Constants.defaultBackendOsmFile;
         }
-
-        OSMParser osmParser = new OSMParser(backendOsmFile);
-        osmParser.parse();
-
-        startServer(port, backendOsmFile);
     }
 
-    private static void startServer(int port, String backendOsmFile) {
+    private static void parseOSMFile() {
+        OSMParser osmParser = new OSMParser(backendOsmFile);
+        osmParser.parse();
+    }
+
+    private static void fixInvalidEntries() {
+        DataStore dataStore = DataStore.getInstance();
+
+        if (!dataStore.getInvalidWays().isEmpty()) {
+            System.out.println("Ways containing invalid ");
+        }
+    }
+
+    private static void startServer() {
         Server grpcServer = ServerBuilder.forPort(port)
                 .addService(new CommunicationService())
                 .build();
@@ -51,4 +68,5 @@ public class MapServiceServer {
             e.printStackTrace(System.out);
         }
     }
+
 }
