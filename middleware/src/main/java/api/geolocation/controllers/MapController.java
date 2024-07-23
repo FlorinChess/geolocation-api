@@ -2,6 +2,7 @@ package api.geolocation.controllers;
 
 import api.geolocation.*;
 import api.geolocation.datamodels.*;
+import api.geolocation.datamodels.Road;
 import api.geolocation.datamodels.Usage;
 import api.geolocation.datamodels.UsageResponse;
 import api.geolocation.datamodels.PaginatedResult;
@@ -224,8 +225,39 @@ public class MapController {
         return ResponseEntity.ok(usageResponse);
     }
 
+    @SneakyThrows
     private RoutingResponse loadRoute(Long from, Long to, String weighting) {
-        return new RoutingResponse();
+        var request = RouteRequest.newBuilder()
+                .setFrom(from)
+                .setTo(to)
+                .setWeighting(weighting)
+                .build();
+
+        var response = MapApplication.stub.getRoute(request);
+
+        var routeResponse = new RoutingResponse();
+
+        var roadsList = new ArrayList<Road>();
+
+        for (var road : response.getRoadsList()) {
+            JSONObject jsonObjectGeometry = (JSONObject) jsonParser.parse(road.getJson());
+
+            var newRoad = new Road();
+
+            newRoad.setId(road.getId());
+            newRoad.setGeom(jsonObjectGeometry);
+            newRoad.setType(road.getType());
+            newRoad.setName(road.getName());
+            newRoad.setTags(road.getTagsMap());
+            newRoad.setChild_ids(road.getChildIdsList());
+            roadsList.add(newRoad);
+        }
+
+        routeResponse.setRoads(roadsList);
+        routeResponse.setTime(response.getTime());
+        routeResponse.setLength(response.getLength());
+
+        return routeResponse;
     }
 
     private UsageResponse loadUsage(Double bboxTlX, Double bboxTlY, Double bboxBrX, Double bboxBrY) {
