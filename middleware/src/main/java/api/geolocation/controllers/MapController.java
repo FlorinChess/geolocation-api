@@ -13,7 +13,6 @@ import api.geolocation.exceptions.NotFoundException;
 import com.google.protobuf.ByteString;
 import lombok.SneakyThrows;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -30,7 +29,6 @@ import java.util.List;
 
 @RestController
 public class MapController {
-    private final JSONParser jsonParser = new JSONParser();
 
     @SneakyThrows
     @GetMapping( "/amenities" )
@@ -46,8 +44,8 @@ public class MapController {
         @RequestParam(defaultValue = "50") int take,
         @RequestParam(defaultValue = "0") int skip) {
         if (bboxTlX != null && bboxTlY != null && bboxBrX != null && bboxBrY != null) {
-            if (!latitudeIsValid(bboxTlX) || !longitudeIsValid(bboxTlY) ||
-                !latitudeIsValid(bboxBrX) || !longitudeIsValid(bboxBrY)) {
+            if (!Utilities.latitudeIsValid(bboxTlX) || !Utilities.longitudeIsValid(bboxTlY) ||
+                !Utilities.latitudeIsValid(bboxBrX) || !Utilities.longitudeIsValid(bboxBrY)) {
                 throw new InvalidRequestException(Constants.badRequestPointValidCoordinatesInvalid);
             }
 
@@ -73,7 +71,7 @@ public class MapController {
         }
 
         if (pointX != null && pointY != null && pointD != null) {
-            if (!latitudeIsValid(pointX) || !longitudeIsValid(pointY) || pointD < 0) {
+            if (!Utilities.latitudeIsValid(pointX) || !Utilities.longitudeIsValid(pointY) || pointD < 0) {
                 throw new InvalidRequestException("Bad request: point provided, but coordinates are invalid.");
             }
 
@@ -128,8 +126,8 @@ public class MapController {
         @RequestParam(defaultValue = "50") int take,
         @RequestParam(defaultValue = "0") int skip) {
         if (bboxTlX != null && bboxTlY != null && bboxBrX != null && bboxBrY != null){
-            if (!latitudeIsValid(bboxTlX) || !longitudeIsValid(bboxTlY) ||
-                !latitudeIsValid(bboxBrX) || !longitudeIsValid(bboxBrY)){
+            if (!Utilities.latitudeIsValid(bboxTlX) || !Utilities.longitudeIsValid(bboxTlY) ||
+                !Utilities.latitudeIsValid(bboxBrX) || !Utilities.longitudeIsValid(bboxBrY)){
                 throw new InvalidRequestException("Bad request: coordinates are invalid.");
             }
 
@@ -215,8 +213,8 @@ public class MapController {
             throw new InvalidRequestException("Invalid parameters!");
         }
 
-        if (!latitudeIsValid(bboxTlX) || !longitudeIsValid(bboxTlY) ||
-            !latitudeIsValid(bboxBrX) || !longitudeIsValid(bboxBrY)){
+        if (!Utilities.latitudeIsValid(bboxTlX) || !Utilities.longitudeIsValid(bboxTlY) ||
+            !Utilities.latitudeIsValid(bboxBrX) || !Utilities.longitudeIsValid(bboxBrY)){
             throw new InvalidRequestException("Bad request: coordinates are invalid.");
         }
 
@@ -240,7 +238,7 @@ public class MapController {
         var roadsList = new ArrayList<Road>();
 
         for (var road : response.getRoadsList()) {
-            JSONObject jsonObjectGeometry = (JSONObject) jsonParser.parse(road.getJson());
+            JSONObject jsonObjectGeometry = (JSONObject) Utilities.jsonParser.parse(road.getJson());
 
             var newRoad = new Road();
 
@@ -323,7 +321,7 @@ public class MapController {
         AmenityResponse response = MapApplication.stub.getAmenityById(request);
 
         if (response.getStatus() == Status.Success) {
-            JSONObject jsonObjectGeometry = (JSONObject) jsonParser.parse(response.getJson());
+            JSONObject jsonObjectGeometry = (JSONObject) Utilities.jsonParser.parse(response.getJson());
 
             amenity = new api.geolocation.datamodels.Amenity();
             amenity.setId(response.getId());
@@ -350,7 +348,7 @@ public class MapController {
         RoadResponse response = MapApplication.stub.getRoadById(request);
 
         if (response.getStatus() == Status.Success) {
-            JSONObject jsonObjectGeometry = (JSONObject) jsonParser.parse(response.getJson());
+            JSONObject jsonObjectGeometry = (JSONObject) Utilities.jsonParser.parse(response.getJson());
 
             road = new api.geolocation.datamodels.Road();
             road.setId(response.getId());
@@ -412,7 +410,7 @@ public class MapController {
 
     @SneakyThrows
     private void buildAmenityResponse(api.geolocation.Amenity currentAmenity, ArrayList<api.geolocation.datamodels.Amenity> amenitiesList) {
-        JSONObject jsonObjectGeometry = (JSONObject) jsonParser.parse(currentAmenity.getJson());
+        JSONObject jsonObjectGeometry = (JSONObject) Utilities.jsonParser.parse(currentAmenity.getJson());
 
         api.geolocation.datamodels.Amenity newAmenity = new api.geolocation.datamodels.Amenity();
 
@@ -505,7 +503,7 @@ public class MapController {
     }
 
     private void buildRoadResponse(api.geolocation.Road currentRoad, ArrayList<api.geolocation.datamodels.Road> roadsList) throws ParseException {
-        JSONObject jsonObjectGeometry = (JSONObject) jsonParser.parse(currentRoad.getJson());
+        JSONObject jsonObjectGeometry = (JSONObject) Utilities.jsonParser.parse(currentRoad.getJson());
 
         api.geolocation.datamodels.Road newRoad = new api.geolocation.datamodels.Road();
 
