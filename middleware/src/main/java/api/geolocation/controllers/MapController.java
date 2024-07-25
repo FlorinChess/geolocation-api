@@ -517,14 +517,6 @@ public class MapController {
         newRoad.setChild_ids(currentRoad.getChildIdsList());
         roadsList.add(newRoad);
     }
-
-    private Boolean latitudeIsValid(Double latitude) {
-        return (-90.0 <= latitude && latitude <= 90.0);
-    }
-
-    private Boolean longitudeIsValid(Double longitude) {
-        return (-180.0 <= longitude && longitude <= 180.0);
-    }
 }
 
 
