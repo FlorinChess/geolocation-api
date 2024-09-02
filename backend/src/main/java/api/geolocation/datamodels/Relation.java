@@ -169,4 +169,8 @@ public class Relation implements IOSMDataModel {
 
         return new MultiPolygon(polygonArray, DataStore.geometryFactory);
     }
+
+    public OSMDataModelType getType() {
+        return OSMDataModelType.Relation;
+    }
 }

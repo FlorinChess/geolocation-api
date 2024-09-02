@@ -12,6 +12,7 @@ public class Way implements IOSMDataModel {
     private long id;
     private Map<String, String> tags;
     private List<Long> nodeRefs;
+    private List<Long> missingNodes;
 
     public Way() {
         tags = new HashMap<>();
@@ -62,6 +63,10 @@ public class Way implements IOSMDataModel {
         }
 
         return new LineString(CoordinateArraySequenceFactory.instance().create(coordinates), DataStore.geometryFactory);
+    }
+
+    public OSMDataModelType getType() {
+        return OSMDataModelType.Way;
     }
 
 }

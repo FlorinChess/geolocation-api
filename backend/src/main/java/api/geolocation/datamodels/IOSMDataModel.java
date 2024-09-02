@@ -8,4 +8,5 @@ public interface IOSMDataModel {
     long getId();
     Map<String, String> getTags();
     Geometry toGeometry();
+    OSMDataModelType getType();
 }

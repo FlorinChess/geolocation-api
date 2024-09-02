@@ -34,4 +34,8 @@ public class Node implements IOSMDataModel {
         return new Point(CoordinateArraySequenceFactory.instance()
                 .create(coordinates), DataStore.geometryFactory);
     }
+
+    public OSMDataModelType getType() {
+        return OSMDataModelType.Node;
+    }
 }
