@@ -17,6 +17,7 @@ public class Way implements IOSMDataModel {
     public Way() {
         tags = new HashMap<>();
         nodeRefs = new ArrayList<>();
+        missingNodes = new ArrayList<>();
     }
 
     public Way(long id, Map<String, String> tags, List<Long> nodeRefs) {
