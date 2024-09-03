@@ -38,4 +38,12 @@ public class Node implements IOSMDataModel {
     public OSMDataModelType getType() {
         return OSMDataModelType.Node;
     }
+
+    @Override
+    public String toString() {
+        return "id = " + id +
+                "\nlat = " + lat +
+                "\nlon = " + lon +
+                "\n";
+    }
 }
