@@ -41,9 +41,6 @@ public class Node implements IOSMDataModel {
 
     @Override
     public String toString() {
-        return "id = " + id +
-                "\nlat = " + lat +
-                "\nlon = " + lon +
-                "\n";
+        return "(id = " + id + " lat = " + lat + " lon = " + lon + ")";
     }
 }
