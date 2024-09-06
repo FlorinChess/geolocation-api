@@ -4,6 +4,7 @@ import api.geolocation.datamodels.*;
 import lombok.Data;
 import org.locationtech.jts.geom.GeometryFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,13 +13,15 @@ import java.util.Map;
 public class DataStore {
     public static final GeometryFactory geometryFactory = new GeometryFactory();
     private static DataStore instance = null;
-    private final HashMap<Long, Node> nodes;
-    private final HashMap<Long, Way> ways;
-    private final HashMap<Long, Relation> relations;
-    private final HashMap<Long, AmenityModel> amenities;
-    private final HashMap<Long, RoadModel> roads;
-    private final HashMap<Long, Node> roadsNodesMap;
-    private final HashMap<Long, Way> waysRelationMap;
+    private final Map<Long, Node> nodes;
+    private final Map<Long, Way> ways;
+    private final Map<Long, Relation> relations;
+    private final Map<Long, AmenityModel> amenities;
+    private final Map<Long, RoadModel> roads;
+    private final Map<Long, Way> invalidWays;
+    private final List<Long> invalidWayIds;
+    private final List<Long> missingNodes;
+    private final List<Long> missingWays;
 
     private DataStore() {
         nodes = new HashMap<>();
@@ -26,20 +29,10 @@ public class DataStore {
         relations = new HashMap<>();
         amenities = new HashMap<>();
         roads = new HashMap<>();
-        roadsNodesMap = new HashMap<>();
-        waysRelationMap = new HashMap<>();
-    }
-
-    public void addNode(long id, double lat, double lon, Map<String, String> tags) {
-        nodes.put(id, new Node(id, lat, lon, tags));
-    }
-
-    public void addWay(long id, Map<String, String> tags, List<Long> nodeReferences) {
-        ways.put(id, new Way(id, tags, nodeReferences));
-    }
-
-    public void addRelation(long id, List<Member> members, Map<String, String> tags) {
-        relations.put(id, new Relation(id, members, tags));
+        invalidWays = new HashMap<>();
+        invalidWayIds = new ArrayList<>();
+        missingNodes = new ArrayList<>();
+        missingWays = new ArrayList<>();
     }
 
     public static DataStore getInstance() {
