@@ -11,10 +11,27 @@ import org.apache.http.impl.client.HttpClients;
 import java.io.IOException;
 
 public class OSMFinder {
-    private static final String OVERPASS_API_URL = "http://overpass-api.de/api/interpreter?data=[out:json];node(%d);out;";
+    private static final String OVERPASS_API_NODE_URL = "http://overpass-api.de/api/interpreter?data=[out:json];node(%d);out;";
+    private static final String OVERPASS_API_WAY_URL = "http://overpass-api.de/api/interpreter?data=[out:json];way(%d);out;";
 
     public static JsonNode fetchNode(long nodeId) throws IOException {
-        String url = String.format(OVERPASS_API_URL, nodeId);
+        String url = String.format(OVERPASS_API_NODE_URL, nodeId);
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpGet request = new HttpGet(url);
+            HttpResponse response = httpClient.execute(request);
+            HttpEntity entity = response.getEntity();
+
+            if (entity != null) {
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readTree(entity.getContent());
+            }
+        }
+        return null;
+    }
+
+    public static JsonNode fetchWay(long wayId) throws IOException {
+        String url = String.format(OVERPASS_API_WAY_URL, wayId);
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpGet request = new HttpGet(url);
