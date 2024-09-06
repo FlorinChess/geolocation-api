@@ -13,17 +13,13 @@ import java.util.Map;
 public class Relation implements IOSMDataModel {
     private long id;
     private List<Member> members;
+    private List<Long> missingWays;
     private Map<String, String> tags;
 
     public Relation() {
         members = new ArrayList<>();
+        missingWays = new ArrayList<>();
         tags = new HashMap<>();
-    }
-
-    public Relation(long id, List<Member> members, Map<String, String> tags) {
-        this.id = id;
-        this.members = members;
-        this.tags = tags;
     }
 
     public ArrayList<Polygon> getInnerPolygons() {
@@ -56,6 +52,7 @@ public class Relation implements IOSMDataModel {
         return outerPolygons;
     }
 
+    // TODO: manage geometries with members with roles "outline" and "part" (e.g. id = 8258274)
     public GeometryCollection toGeometry() throws RuntimeException {
         if (tags.containsValue("multipolygon")) {
             List<MultiPolygon> multiPolygons = new ArrayList<>();
@@ -99,8 +96,7 @@ public class Relation implements IOSMDataModel {
             return multiPolygonsToGeometryCollection(multiPolygons);
         }
         else {
-            // TODO: split into 2 separate functions
-//            return buildGeometryCollection(members);
+            // TODO: implement mapping of building outlines; check https://wiki.openstreetmap.org/wiki/Simple_3D_Buildings#Building_outlines
             return null;
         }
     }
@@ -115,20 +111,13 @@ public class Relation implements IOSMDataModel {
         return new GeometryCollection(geometryArray, DataStore.geometryFactory);
     }
 
-    private GeometryCollection membersToGeometryCollection(List<Member> members) {
-        return null;
-    }
-
     private ClosedCircleResult getNextClosed(int i, List<Member> members) {
         String lastRole = "";
         List<Geometry> geometries = new ArrayList<>();
 
         for (; i < members.size(); i++) {
             Member member = members.get(i);
-            Way way = DataStore.getInstance().getWaysRelationMap().get(member.getRef());
-
-            if (way == null)
-                throw new RuntimeException("Relation (id = "  + id + ") is missing referenced way (ref = " + member.getRef() + ")!");
+            Way way = DataStore.getInstance().getWays().get(member.getRef());
 
             Geometry geometry = way.toGeometry();
 
