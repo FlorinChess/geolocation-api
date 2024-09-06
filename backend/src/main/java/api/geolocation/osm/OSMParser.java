@@ -64,6 +64,7 @@ public class OSMParser {
     private void parseNodes(NodeList nodes, long count) {
         int nodeAmenitiesCount = 0;
         int nodeRoadsCount = 0;
+        int nodeTotalCount = 0;
 
         for (int i = 0; i < count; i++) {
             org.w3c.dom.Node currentNode = nodes.item(i);
@@ -96,13 +97,15 @@ public class OSMParser {
                     nodeAmenitiesCount++;
                 }
 
+                // TODO: these could be crossings; not sure if they should be counted as roads
                 if (tags.containsKey("highway")) {
                     Geometry geometry = newNode.toGeometry();
                     dataStore.getRoads().put(id, new RoadModel(id, geometry, tags, new ArrayList<>()));
                     nodeRoadsCount++;
                 }
 
-                dataStore.addNode(id, lat, lon, tags);
+                dataStore.getNodes().put(id, newNode);
+                nodeTotalCount++;
             }
             catch (NumberFormatException ex) {
                 ex.printStackTrace(System.out);
@@ -112,6 +115,8 @@ public class OSMParser {
 
         System.out.println("Number of nodes representing amenities: " + nodeAmenitiesCount);
         System.out.println("Number of nodes representing roads:     " + nodeRoadsCount);
+        System.out.println("Total number of nodes:                  " + nodeTotalCount);
+        System.out.println("Finished processing nodes!");
         amenityCount += nodeAmenitiesCount;
         roadCount += nodeRoadsCount;
     }
@@ -119,6 +124,7 @@ public class OSMParser {
     private void parseWays(NodeList ways, long count) {
         int wayAmenitiesCount = 0;
         int wayRoadsCount = 0;
+        int waysTotalCount = 0;
         int invalidWays = 0;
 
         for (int i = 0; i < count; i++) {
@@ -141,15 +147,15 @@ public class OSMParser {
                     {
                         var refId = Long.parseLong(childNodeAttributes.item(0).getNodeValue());
 
-                        newWay.getNodeRefs().add(refId);
-                        Node toBeRemoved = dataStore.getNodes().remove(refId);
-
-                        if (toBeRemoved != null) {
-                            dataStore.getRoadsNodesMap().put(toBeRemoved.getId(), toBeRemoved);
+                        if (dataStore.getNodes().containsKey(refId)) {
+                            // add to node refs
+                            newWay.getNodes().add(dataStore.getNodes().get(refId));
                         }
                         else {
+                            // add to missing nodes
+                            newWay.getMissingNodes().add(refId);
+                            dataStore.getMissingNodes().add(refId);
                             invalid = true;
-                            break;
                         }
                     }
 
@@ -163,8 +169,13 @@ public class OSMParser {
 
                 if (invalid) {
                     invalidWays++;
+                    dataStore.getInvalidWays().put(newWay.getId(), newWay);
                     continue;
                 }
+
+                // Set it back to null for garbage collection
+                // TODO: improve this; find a way to do this without garbage collection
+                newWay.setMissingNodes(null);
 
                 if (newWay.getTags().containsKey("amenity")) {
                     var geometry = newWay.toGeometry();
@@ -178,13 +189,14 @@ public class OSMParser {
                 if (newWay.getTags().containsKey("highway")) {
                     var geometry = newWay.toGeometry();
 
-                    RoadModel newRoad = new RoadModel(newWay.getId(), geometry, newWay.getTags(), newWay.getNodeRefs());
+                    RoadModel newRoad = new RoadModel(newWay.getId(), geometry, newWay.getTags(), newWay.getNodeIds());
                     dataStore.getRoads().put(newWay.getId(), newRoad);
 
                     wayRoadsCount++;
                 }
 
                 dataStore.getWays().put(newWay.getId(), newWay);
+                waysTotalCount++;
             }
             catch (NumberFormatException ex) {
                 System.out.println("Way at index " + i + " contains attributes that cannot be converted to their respective numeric representations!");
@@ -202,6 +214,8 @@ public class OSMParser {
         System.out.println("Number of ways representing amenities: " + wayAmenitiesCount);
         System.out.println("Number of ways representing roads:     " + wayRoadsCount);
         System.out.println("Number of ways with missing nodes:     " + invalidWays);
+        System.out.println("Total number of ways:                  " + waysTotalCount);
+        System.out.println("Finished processing ways!");
 
         amenityCount += wayAmenitiesCount;
         roadCount += wayRoadsCount;
@@ -211,6 +225,8 @@ public class OSMParser {
         int relationAmenityCount = 0;
         int relationRoadsCount = 0;
         int invalidRelations = 0;
+        int relationTotalCount = 0;
+        int invalidRelationGeometries = 0;
 
         for (int i = 0; i < count; i++) {
             org.w3c.dom.Node currentNode = relations.item(i);
@@ -236,18 +252,15 @@ public class OSMParser {
                         newMember.setRole(childNodeAttributes.item(1).getNodeValue());
                         newMember.setType(childNodeAttributes.item(2).getNodeValue());
 
-                        newRelation.getMembers().add(newMember);
-
                         var refId = newMember.getRef();
 
-                        Way toBeRemoved = dataStore.getWays().remove(refId);
-
-                        if (toBeRemoved != null) {
-                            dataStore.getWaysRelationMap().put(toBeRemoved.getId(), toBeRemoved);
+                        if (dataStore.getWays().containsKey(refId)) {
+                            newRelation.getMembers().add(newMember);
                         }
                         else {
+                            newRelation.getMissingWays().add(refId);
+                            dataStore.getMissingWays().add(refId);
                             invalid = true;
-                            break;
                         }
                     }
 
@@ -261,25 +274,40 @@ public class OSMParser {
 
                 if (invalid) {
                     invalidRelations++;
+                    relationTotalCount++;
                     continue;
                 }
 
                 if (newRelation.getTags().containsKey("amenity")) {
-                    var geometry = newRelation.toGeometry();
-                    AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
-                    dataStore.getAmenities().put(newRelation.getId(), newAmenity);
-                    relationAmenityCount++;
+                    Geometry geometry = newRelation.toGeometry();
+
+                    if (geometry != null) {
+                        AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
+                        dataStore.getAmenities().put(newRelation.getId(), newAmenity);
+                        relationAmenityCount++;
+                    }
+                    else {
+                        System.out.println("Invalid geometry! id = " + newRelation.getId());
+                        invalidRelationGeometries++;
+                    }
                 }
 
                 if (newRelation.getTags().containsKey("highway")) {
-                    var geometry = newRelation.toGeometry();
-                    // TODO: nodeRefs
-                    RoadModel newRoad = new RoadModel(newRelation.getId(), geometry, newRelation.getTags(), new ArrayList<>());
-                    dataStore.getRoads().put(newRelation.getId(), newRoad);
-                    relationRoadsCount++;
+                    Geometry geometry = newRelation.toGeometry();
+
+                    if (geometry != null) {
+                        RoadModel newRoad = new RoadModel(newRelation.getId(), geometry, newRelation.getTags(), new ArrayList<>());
+                        dataStore.getRoads().put(newRelation.getId(), newRoad);
+                        relationRoadsCount++;
+                    }
+                    else {
+                        System.out.println("Invalid geometry! id = " + newRelation.getId());
+                        invalidRelationGeometries++;
+                    }
                 }
 
                 dataStore.getRelations().put(newRelation.getId(), newRelation);
+                relationTotalCount++;
             }
             catch (NumberFormatException ex) {
                 System.out.println("Relation at index " + i + " contains attributes that cannot be converted to their respective numeric representations!");
@@ -288,6 +316,7 @@ public class OSMParser {
             catch (RuntimeException ex) {
                 System.out.println("Relation at index  " + i + " does not form a valid Geometry!");
                 ex.printStackTrace(System.out);
+                invalidRelationGeometries++;
             }
             catch (Exception ex) {
                 ex.printStackTrace(System.out);
@@ -297,6 +326,9 @@ public class OSMParser {
         System.out.println("Number of relations representing amenities:  " + relationAmenityCount);
         System.out.println("Number of relations representing roads:      " + relationRoadsCount);
         System.out.println("Number of relations with missing references: " + invalidRelations);
+        System.out.println("Number of relations with invalid geometries: " + invalidRelationGeometries);
+        System.out.println("Total number of relations: " + relationTotalCount);
+        System.out.println("Finished processing relations!");
 
         amenityCount += relationAmenityCount;
         roadCount += relationRoadsCount;
