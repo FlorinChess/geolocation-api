@@ -267,7 +267,7 @@ public class MapRenderer {
 
     private void drawRoads(List<Way> ways, Color color, Graphics2D g) {
         for (Way way : ways) {
-            drawRoad(way.getListOfNodes(), color, g);
+            drawRoad(way.getNodes(), color, g);
         }
     }
 

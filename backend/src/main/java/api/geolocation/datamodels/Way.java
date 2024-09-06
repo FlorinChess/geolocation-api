@@ -11,50 +11,32 @@ import org.locationtech.jts.geom.impl.CoordinateArraySequenceFactory;
 public class Way implements IOSMDataModel {
     private long id;
     private Map<String, String> tags;
-    private List<Long> nodeRefs;
     private List<Long> missingNodes;
+    private List<Node> nodes;
+    private String role = null;
 
     public Way() {
         tags = new HashMap<>();
-        nodeRefs = new ArrayList<>();
         missingNodes = new ArrayList<>();
-    }
-
-    public Way(long id, Map<String, String> tags, List<Long> nodeRefs) {
-        this.id = id;
-        this.tags = tags;
-        this.nodeRefs = nodeRefs;
-    }
-
-    public List<Node> getListOfNodes() {
-        ArrayList<Node> nodeWay = new ArrayList<>();
-        for (var ref : nodeRefs) {
-            Node node = DataStore.getInstance().getRoadsNodesMap().get(ref);
-
-            if (node != null)
-                nodeWay.add(DataStore.getInstance().getRoadsNodesMap().get(ref));
-            else
-                System.out.println("Way.java: node is missing. id = " + ref);
-        }
-        return nodeWay;
+        nodes = new LinkedList<>();
     }
 
     public Geometry toGeometry() throws RuntimeException {
-        if (nodeRefs.isEmpty())
+        int nodeCount = nodes.size();
+
+        if (nodeCount == 0)
             throw new RuntimeException("Way with id " + id + " has no referenced nodes!");
 
-        Coordinate[] coordinates = new Coordinate[nodeRefs.size()];
-        int i = 0;
-        for (var ref : nodeRefs){
-            var node = DataStore.getInstance().getRoadsNodesMap().get(ref);
+        Coordinate[] coordinates = new Coordinate[nodeCount];
+        for (int i = 0;  i < nodeCount; i++) {
+            if (nodes.get(i) == null)
+                throw new RuntimeException("Node referenced by way is null!!?");
 
-            if (node == null) continue;
-
-            coordinates[i] = new Coordinate(node.getLon(), node.getLat());
-            i++;
+            coordinates[i] = new Coordinate(nodes.get(i).getLon(), nodes.get(i).getLat());
         }
 
-        if (coordinates.length > 2 && Objects.equals(nodeRefs.get(0), nodeRefs.get((nodeRefs.size() - 1)))){
+        // TODO: check if equality check is correct
+        if (coordinates.length > 2 && Objects.equals(nodes.get(0), nodes.get((nodes.size() - 1)))){
             LinearRing linearRing = DataStore.geometryFactory.createLinearRing(coordinates);
             return new Polygon(linearRing, null, DataStore.geometryFactory);
         }
@@ -64,6 +46,15 @@ public class Way implements IOSMDataModel {
         }
 
         return new LineString(CoordinateArraySequenceFactory.instance().create(coordinates), DataStore.geometryFactory);
+    }
+
+    public List<Long> getNodeIds() {
+        List<Long> ids = new ArrayList<>();
+        for (int i = 0; i < nodes.size(); i++) {
+            ids.add(nodes.get(i).getId());
+        }
+
+        return ids;
     }
 
     public OSMDataModelType getType() {
