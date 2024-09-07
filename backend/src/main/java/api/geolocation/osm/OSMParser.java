@@ -148,14 +148,15 @@ public class OSMParser {
                         var refId = Long.parseLong(childNodeAttributes.item(0).getNodeValue());
 
                         if (dataStore.getNodes().containsKey(refId)) {
-                            // add to node refs
                             newWay.getNodes().add(dataStore.getNodes().get(refId));
                         }
                         else {
-                            // add to missing nodes
                             newWay.getMissingNodes().add(refId);
-                            dataStore.getMissingNodes().add(refId);
                             invalid = true;
+
+                            // Only add if the id isn't already in the missing list
+                            if (!dataStore.getMissingNodes().contains(refId))
+                                dataStore.getMissingNodes().add(refId);
                         }
                     }
 
@@ -259,8 +260,10 @@ public class OSMParser {
                         }
                         else {
                             newRelation.getMissingWays().add(refId);
-                            dataStore.getMissingWays().add(refId);
                             invalid = true;
+
+                            if (!dataStore.getMissingWays().contains(refId))
+                                dataStore.getMissingWays().add(refId);
                         }
                     }
 
