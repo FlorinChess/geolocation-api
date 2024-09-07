@@ -56,24 +56,22 @@ public class MapRenderer {
 
         List<Relation> waterRelations = relationsMap.values().stream().filter(relation -> relation.getTags().containsKey("water")).toList();
 
-        List<Way> waterWae = waysMap.values().stream().filter(way -> way.getTags().containsKey("water")).toList();
+        List<Way> waterWays = waysMap.values().stream().filter(way -> way.getTags().containsKey("water")).toList();
 
         for (String layer : layersArray) {
             List<Way> selectedRoads = roads.stream()
-                    .filter(way -> way.getTags().get("highway").equals(layer) || (!(isRoad(way.getTags().get("highway"))) && layer.equals("road")))
+                    .filter(way -> way.getTags().get("highway")
+                    .equals(layer) || (!(isRoad(way.getTags().get("highway"))) && layer.equals("road")))
                     .toList();
-            if (layer.equals("road")) {
-                drawRoads(selectedRoads, giveColor("road"), g);
-            } else {
-                drawRoads(selectedRoads, giveColor(layer), g);
-            }
+
+            drawRoads(selectedRoads, giveColor(layer), g);
 
             List<Relation> selectedRelation = landRelations.stream().filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
             drawLands(selectedRelation, giveColor(layer), g);
 
             if (layer.equals("water")){
                 drawLands(waterRelations, giveColor(layer), g);
-                drawRoads(waterWae, giveColor(layer), g);
+                drawRoads(waterWays, giveColor(layer), g);
             }
         }
 
@@ -271,11 +269,11 @@ public class MapRenderer {
         }
     }
 
-    private void drawLand(ArrayList<org.locationtech.jts.geom.Polygon> innerPoly, ArrayList<org.locationtech.jts.geom.Polygon> outerPoly, Color color, Graphics2D g) {
+    private void drawLand(ArrayList<org.locationtech.jts.geom.Polygon> innerPolygons, ArrayList<org.locationtech.jts.geom.Polygon> outerPolygons, Color color, Graphics2D g) {
         Area area = new Area();
-        outerPoly.forEach(poly -> area.add(new Area(transPolygon(poly))));
+        outerPolygons.forEach(poly -> area.add(new Area(transPolygon(poly))));
 
-        innerPoly.forEach(poly -> area.subtract(new Area(transPolygon(poly))));
+        innerPolygons.forEach(poly -> area.subtract(new Area(transPolygon(poly))));
 
         /*if (color.equals(new Color(173,209,158))){
             System.out.println("forest");
