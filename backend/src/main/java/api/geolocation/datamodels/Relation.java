@@ -142,6 +142,7 @@ public class Relation implements IOSMDataModel {
                 return new ClosedCircleResult(polygon, lastRole, i);
             }
             catch (Exception ex) {
+                System.out.println("Invalid geometry! id = " + id);
                 ex.printStackTrace(System.out);
             }
         }
