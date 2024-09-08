@@ -25,6 +25,8 @@ public class MapRenderer {
 
     private final int tileSize = 512;
     private final DataStore dataStore = DataStore.getInstance();
+    private final List<String> predefinedDrawingOrder =
+            Arrays.asList("vineyard", "grass", "forest", "water", "motorway", "truck", "road", "secondary", "primary", "railway");
 
     public BufferedImage renderTile(int zoom, int x, int y, String layers) throws IOException {
         BufferedImage image = new BufferedImage(tileSize, tileSize, BufferedImage.TYPE_INT_RGB);
@@ -48,31 +50,49 @@ public class MapRenderer {
         minLon = bbox.west;
         minLat = bbox.south;
 
-        String[] layersArray = layers.split(",");
+        List<String> layersArray = new ArrayList<>(List.of(layers.split(",")));
 
-        List<Way> roads = waysMap.values().stream().filter(way -> way.getTags().containsKey("highway")).toList();
+        // Create a map for faster lookup of the predefined order
+        Map<String, Integer> orderMap = new HashMap<>();
+        for (int i = 0; i < predefinedDrawingOrder.size(); i++) {
+            orderMap.put(predefinedDrawingOrder.get(i), i);
+        }
 
-        List<Relation> landRelations = relationsMap.values().stream().filter(relation -> relation.getTags().containsKey("landuse")).toList();
+        // Sort the list using a custom comparator based on the predefined order
+        Collections.sort(layersArray, (a, b) -> {
+            Integer indexA = orderMap.getOrDefault(a, Integer.MAX_VALUE); // Default to max if not found
+            Integer indexB = orderMap.getOrDefault(b, Integer.MAX_VALUE);
+            return indexA.compareTo(indexB);
+        });
 
-        List<Relation> waterRelations = relationsMap.values().stream().filter(relation -> relation.getTags().containsKey("water")).toList();
+        System.out.println(layersArray);
 
-        List<Way> waterWays = waysMap.values().stream().filter(way -> way.getTags().containsKey("water")).toList();
+        List<Way> roads = waysMap.values().stream()
+                .filter(way -> way.getTags().containsKey("highway")).toList();
+
+        List<Relation> landRelations = relationsMap.values().stream()
+                .filter(relation -> relation.getTags().containsKey("landuse")).toList();
+
+        List<Relation> waterRelations = relationsMap.values().stream()
+                .filter(relation -> relation.getTags().containsKey("water")).toList();
+
+        List<Way> waterWays = waysMap.values().stream()
+                .filter(way -> way.getTags().containsKey("water")).toList();
 
         for (String layer : layersArray) {
-            List<Way> selectedRoads = roads.stream()
-                    .filter(way -> way.getTags().get("highway")
-                    .equals(layer) || (!(isRoad(way.getTags().get("highway"))) && layer.equals("road")))
-                    .toList();
-
-            drawRoads(selectedRoads, giveColor(layer), g);
-
-            List<Relation> selectedRelation = landRelations.stream().filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
+            List<Relation> selectedRelation = landRelations.stream()
+                    .filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
             drawLands(selectedRelation, giveColor(layer), g);
 
             if (layer.equals("water")){
                 drawLands(waterRelations, giveColor(layer), g);
                 drawRoads(waterWays, giveColor(layer), g);
             }
+
+            List<Way> selectedRoads = roads.stream()
+                    .filter(way -> way.getTags().get("highway")
+                    .equals(layer) || (!(isRoad(way.getTags().get("highway"))) && layer.equals("road"))).toList();
+            drawRoads(selectedRoads, giveColor(layer), g);
         }
 
         image = flipImageCounterClockwise(image);
