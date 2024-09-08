@@ -4,6 +4,7 @@ import api.geolocation.DataStore;
 import lombok.Data;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.operation.linemerge.LineMerger;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,60 +23,61 @@ public class Relation implements IOSMDataModel {
         tags = new HashMap<>();
     }
 
-    public ArrayList<Polygon> getInnerPolygons() {
-        ArrayList<Polygon> innerPolygons = new ArrayList<>();
+    public ArrayList<LinearRing> getInnerPolygons() {
+        ArrayList<LinearRing> innerRings = new ArrayList<>();
 
         for (int i = 0; i < members.size();) {
-            ClosedCircleResult closedCircle = getNextClosed(i, members);
+            ClosedCircle closedCircle = getNextClosed(i, members);
 
             if (closedCircle != null && closedCircle.getLastRole().equals("inner")) {
-                innerPolygons.add(closedCircle.getPolygon());
+                innerRings.add(closedCircle.getLinearRing());
             }
 
             i = (int) (closedCircle != null ? closedCircle.getLastMemberIndex() + 1 : i + 1);
         }
-        return innerPolygons;
+        return innerRings;
     }
 
-    public ArrayList<Polygon> getOuterPolygons() {
-        ArrayList<Polygon> outerPolygons = new ArrayList<>();
+    public ArrayList<LinearRing> getOuterPolygons() {
+        ArrayList<LinearRing> outerRings = new ArrayList<>();
 
         for (int i = 0; i < members.size();) {
-            ClosedCircleResult closedCircle = getNextClosed(i, members);
+            ClosedCircle closedCircle = getNextClosed(i, members);
+
+            if (members.get(i).getRole().equals("outline")) {
+                Way way = DataStore.getInstance().getWays().get(members.get(0).getRef());
+                outerRings.add((LinearRing) way.toGeometry());
+                return outerRings;
+            }
 
             if (closedCircle != null && closedCircle.getLastRole().equals("outer")) {
-                outerPolygons.add(closedCircle.getPolygon());
+                outerRings.add(closedCircle.getLinearRing());
             }
 
             i = (int) (closedCircle != null ? closedCircle.getLastMemberIndex() + 1 : i + 1);
         }
-        return outerPolygons;
+        return outerRings;
     }
 
     // TODO: manage geometries with members with roles "outline" and "part" (e.g. id = 8258274)
-    public GeometryCollection toGeometry() throws RuntimeException {
+    public MultiPolygon toGeometry() throws RuntimeException {
         if (tags.containsValue("multipolygon")) {
-            List<MultiPolygon> multiPolygons = new ArrayList<>();
-            List<Polygon> inners = new ArrayList<>();
-            Polygon outer = null;
-
+            List<Polygon> polygons = new ArrayList<>();
+            List<LinearRing> inners = new ArrayList<>();
+            LinearRing outer = null;
             for (int i = 0; i < members.size();) {
-                ClosedCircleResult closedCircle = getNextClosed(i, members);
+                ClosedCircle closedCircle = getNextClosed(i, members);
 
                 if (closedCircle != null) {
                     if (closedCircle.getLastRole().equals("outer")) {
                         if (outer != null) {
-                            var polygons = new ArrayList<Polygon>();
-                            polygons.add(outer);
-                            polygons.addAll(inners);
-
-                            multiPolygons.add(buildMultipolygon(polygons));
+                            polygons.add(buildPolygon(outer, inners));
                             inners.clear();
                         }
-                        outer = closedCircle.getPolygon();
+                        outer = closedCircle.getLinearRing();
                     }
                     else if (closedCircle.getLastRole().equals("inner")) {
-                        inners.add(closedCircle.getPolygon());
+                        inners.add(closedCircle.getLinearRing());
                     }
 
                     i = (int) (closedCircle.getLastMemberIndex() + 1);
@@ -86,32 +88,42 @@ public class Relation implements IOSMDataModel {
             }
 
             if (outer != null) {
-                var polygons = new ArrayList<Polygon>();
-                polygons.add(outer);
-                polygons.addAll(inners);
-
-                multiPolygons.add(buildMultipolygon(polygons));
+                polygons.add(buildPolygon(outer, inners));
                 inners.clear();
             }
-            return multiPolygonsToGeometryCollection(multiPolygons);
+            return buildMultiPolygon(polygons);
         }
-        else {
+        else if (tags.containsKey("building")) {
             // TODO: implement mapping of building outlines; check https://wiki.openstreetmap.org/wiki/Simple_3D_Buildings#Building_outlines
-            return null;
+            List<LinearRing> inners = new ArrayList<>();
+            LinearRing outer = null;
+
+            for (int i = 0; i < members.size(); i++) {
+                if (members.get(i).getRole().equals("outline")) {
+                    Way way = DataStore.getInstance().getWays().get(members.get(i).getRef());
+                    outer = (LinearRing) way.toGeometry();
+                }
+
+                if (members.get(i).getRole().equals("part")) {
+                    Way way = DataStore.getInstance().getWays().get(members.get(i).getRef());
+                    inners.add((LinearRing) way.toGeometry());
+                }
+            }
+
+            var polygons = new ArrayList<Polygon>();
+            polygons.add(buildPolygon(outer, inners));
+
+            return buildMultiPolygon(polygons);
         }
+
+        return null;
     }
 
-    private GeometryCollection multiPolygonsToGeometryCollection(List<MultiPolygon> geometries) {
-        Geometry[] geometryArray = new Geometry[geometries.size()];
-
-        for (int i = 0; i < geometries.size(); i++) {
-            geometryArray[i] = geometries.get(i);
-        }
-
-        return new GeometryCollection(geometryArray, DataStore.geometryFactory);
+    private MultiPolygon buildMultiPolygon(List<Polygon> polygons) {
+        return DataStore.geometryFactory.createMultiPolygon(polygons.toArray(new Polygon[0]));
     }
 
-    private ClosedCircleResult getNextClosed(int i, List<Member> members) {
+    private ClosedCircle getNextClosed(int i, List<Member> members) {
         String lastRole = "";
         List<Geometry> geometries = new ArrayList<>();
 
@@ -121,8 +133,8 @@ public class Relation implements IOSMDataModel {
 
             Geometry geometry = way.toGeometry();
 
-            if (geometry.getGeometryType().equals(Geometry.TYPENAME_POLYGON)) {
-                return new ClosedCircleResult((Polygon) geometry, member.getRole(), i);
+            if (geometry.getGeometryType().equals(Geometry.TYPENAME_LINEARRING)) {
+                return new ClosedCircle((LinearRing) geometry, member.getRole(), i);
             }
 
             geometries.add(geometry);
@@ -138,26 +150,22 @@ public class Relation implements IOSMDataModel {
 
                 LinearRing linearRing = DataStore.geometryFactory.createLinearRing(lineString.getCoordinates());
 
-                Polygon polygon = new Polygon(linearRing, null, DataStore.geometryFactory);
-                return new ClosedCircleResult(polygon, lastRole, i);
+                return new ClosedCircle(linearRing, lastRole, i);
             }
             catch (Exception ex) {
                 System.out.println("Invalid geometry! id = " + id);
                 ex.printStackTrace(System.out);
             }
         }
+        else {
+            return null;
+        }
 
         return null;
     }
 
-    private MultiPolygon buildMultipolygon(ArrayList<Polygon> polygons) {
-        var polygonArray = new Polygon[polygons.size()];
-
-        for (int i = 0; i < polygons.size(); i++) {
-            polygonArray[i] = polygons.get(i);
-        }
-
-        return new MultiPolygon(polygonArray, DataStore.geometryFactory);
+    private Polygon buildPolygon(LinearRing shell, List<LinearRing> holes) {
+        return DataStore.geometryFactory.createPolygon(shell, holes.toArray(new LinearRing[0]));
     }
 
     public OSMDataModelType getType() {

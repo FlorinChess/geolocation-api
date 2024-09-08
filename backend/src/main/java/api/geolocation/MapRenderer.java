@@ -4,6 +4,8 @@ import api.geolocation.datamodels.Node;
 import api.geolocation.datamodels.Relation;
 import api.geolocation.datamodels.Way;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.LinearRing;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -289,15 +291,11 @@ public class MapRenderer {
         }
     }
 
-    private void drawLand(ArrayList<org.locationtech.jts.geom.Polygon> innerPolygons, ArrayList<org.locationtech.jts.geom.Polygon> outerPolygons, Color color, Graphics2D g) {
+    private void drawLand(List<LinearRing> innerPolygons, List<LinearRing> outerPolygons, Color color, Graphics2D g) {
         Area area = new Area();
-        outerPolygons.forEach(poly -> area.add(new Area(transPolygon(poly))));
+        outerPolygons.forEach(poly -> area.add(new Area(convertToPolygon(poly))));
+        innerPolygons.forEach(poly -> area.subtract(new Area(convertToPolygon(poly))));
 
-        innerPolygons.forEach(poly -> area.subtract(new Area(transPolygon(poly))));
-
-        /*if (color.equals(new Color(173,209,158))){
-            System.out.println("forest");
-        } */
         g.setColor(color);
         g.fill(area);
     }
@@ -308,15 +306,15 @@ public class MapRenderer {
         }
     }
 
-    private Polygon transPolygon(org.locationtech.jts.geom.Polygon badPolygon) {
-        int[] x = new int[badPolygon.getNumPoints()];
-        int[] y = new int[badPolygon.getNumPoints()];
+    private Polygon convertToPolygon(LinearRing jtsLinearRing) {
+        int[] x = new int[jtsLinearRing.getNumPoints()];
+        int[] y = new int[jtsLinearRing.getNumPoints()];
 
-        for (int i = 0; i < badPolygon.getNumPoints(); i++){
-            x[i] = transLon(badPolygon.getCoordinates()[i].x);
-            y[i] = transLat(badPolygon.getCoordinates()[i].y);
+        for (int i = 0; i < jtsLinearRing.getNumPoints(); i++){
+            x[i] = transLon(jtsLinearRing.getCoordinates()[i].x);
+            y[i] = transLat(jtsLinearRing.getCoordinates()[i].y);
         }
-        return new Polygon(y, x, badPolygon.getNumPoints());
+        return new Polygon(y, x, jtsLinearRing.getNumPoints());
     }
 
     public BufferedImage flipImageCounterClockwise(BufferedImage flipped) {
