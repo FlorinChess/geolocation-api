@@ -271,34 +271,22 @@ public class OSMParser {
                     continue;
                 }
 
+                Geometry geometry = newRelation.toGeometry();
+                if (geometry == null) {
+                    System.out.println("Invalid geometry! id = " + newRelation.getId());
+                    invalidRelationGeometries++;
+                    continue;
+                }
                 if (newRelation.getTags().containsKey("amenity")) {
-                    Geometry geometry = newRelation.toGeometry();
-
-                    if (geometry != null) {
-                        AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
-                        dataStore.getAmenities().put(newRelation.getId(), newAmenity);
-                        relationAmenityCount++;
-                    }
-                    else {
-                        System.out.println("Invalid geometry! id = " + newRelation.getId());
-                        invalidRelationGeometries++;
-                        continue;
-                    }
+                    AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
+                    dataStore.getAmenities().put(newRelation.getId(), newAmenity);
+                    relationAmenityCount++;
                 }
 
                 if (newRelation.getTags().containsKey("highway")) {
-                    Geometry geometry = newRelation.toGeometry();
-
-                    if (geometry != null) {
-                        RoadModel newRoad = new RoadModel(newRelation.getId(), geometry, newRelation.getTags(), new ArrayList<>());
-                        dataStore.getRoads().put(newRelation.getId(), newRoad);
-                        relationRoadsCount++;
-                    }
-                    else {
-                        System.out.println("Invalid geometry! id = " + newRelation.getId());
-                        invalidRelationGeometries++;
-                        continue;
-                    }
+                    RoadModel newRoad = new RoadModel(newRelation.getId(), geometry, newRelation.getTags(), new ArrayList<>());
+                    dataStore.getRoads().put(newRelation.getId(), newRoad);
+                    relationRoadsCount++;
                 }
 
                 dataStore.getRelations().put(newRelation.getId(), newRelation);
