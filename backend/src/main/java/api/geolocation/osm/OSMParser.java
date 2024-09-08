@@ -226,9 +226,9 @@ public class OSMParser {
             org.w3c.dom.Node currentNode = relations.item(i);
 
             boolean valid = true;
+            Relation newRelation = new Relation();
 
             try {
-                Relation newRelation = new Relation();
                 newRelation.setId(Long.parseLong(currentNode.getAttributes().item(0).getNodeValue()));
 
                 NodeList childNodes = currentNode.getChildNodes();
@@ -309,7 +309,7 @@ public class OSMParser {
                 ex.printStackTrace(System.out);
             }
             catch (RuntimeException ex) {
-                System.out.println("Relation at index  " + i + " does not form a valid Geometry!");
+                System.out.println("Invalid relation geometry! id = " + newRelation.getId());
                 ex.printStackTrace(System.out);
                 invalidRelationGeometries++;
             }
