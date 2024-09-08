@@ -18,11 +18,8 @@ public class DataStore {
     private final Map<Long, Relation> relations;
     private final Map<Long, AmenityModel> amenities;
     private final Map<Long, RoadModel> roads;
-    private final Map<Long, Way> invalidWays;
-    private final Map<Long, Relation> invalidRelations;
-    private final List<Long> invalidWayIds;
-    private final List<Long> missingNodes;
-    private final List<Long> missingWays;
+    private final List<Way> invalidWays;
+    private final List<Relation> invalidRelations;
 
     private DataStore() {
         nodes = new HashMap<>();
@@ -30,11 +27,8 @@ public class DataStore {
         relations = new HashMap<>();
         amenities = new HashMap<>();
         roads = new HashMap<>();
-        invalidWays = new HashMap<>();
-        invalidRelations = new HashMap<>();
-        invalidWayIds = new ArrayList<>();
-        missingNodes = new ArrayList<>();
-        missingWays = new ArrayList<>();
+        invalidWays = new ArrayList<>();
+        invalidRelations = new ArrayList<>();
     }
 
     public static DataStore getInstance() {

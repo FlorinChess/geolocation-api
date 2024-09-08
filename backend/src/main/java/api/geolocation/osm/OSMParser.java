@@ -125,10 +125,9 @@ public class OSMParser {
         int wayAmenitiesCount = 0;
         int wayRoadsCount = 0;
         int waysTotalCount = 0;
-        int invalidWays = 0;
 
         for (int i = 0; i < count; i++) {
-            boolean invalid = false;
+            boolean valid = true;
 
             org.w3c.dom.Node currentNode = ways.item(i);
 
@@ -152,11 +151,7 @@ public class OSMParser {
                         }
                         else {
                             newWay.getMissingNodes().add(refId);
-                            invalid = true;
-
-                            // Only add if the id isn't already in the missing list
-                            if (!dataStore.getMissingNodes().contains(refId))
-                                dataStore.getMissingNodes().add(refId);
+                            valid = false;
                         }
                     }
 
@@ -168,9 +163,8 @@ public class OSMParser {
                     }
                 }
 
-                if (invalid) {
-                    invalidWays++;
-                    dataStore.getInvalidWays().put(newWay.getId(), newWay);
+                if (!valid) {
+                    dataStore.getInvalidWays().add(newWay);
                     continue;
                 }
 
@@ -214,7 +208,7 @@ public class OSMParser {
 
         System.out.println("Number of ways representing amenities: " + wayAmenitiesCount);
         System.out.println("Number of ways representing roads:     " + wayRoadsCount);
-        System.out.println("Number of ways with missing nodes:     " + invalidWays);
+        System.out.println("Number of ways with missing nodes:     " + dataStore.getInvalidWays().size());
         System.out.println("Total number of ways:                  " + waysTotalCount);
         System.out.println("Finished processing ways!");
 
@@ -225,14 +219,13 @@ public class OSMParser {
     private void parseRelations(NodeList relations, long count) {
         int relationAmenityCount = 0;
         int relationRoadsCount = 0;
-        int invalidRelations = 0;
         int relationTotalCount = 0;
         int invalidRelationGeometries = 0;
 
         for (int i = 0; i < count; i++) {
             org.w3c.dom.Node currentNode = relations.item(i);
 
-            boolean invalid = false;
+            boolean valid = true;
 
             try {
                 Relation newRelation = new Relation();
@@ -260,10 +253,7 @@ public class OSMParser {
                         }
                         else {
                             newRelation.getMissingWays().add(refId);
-                            invalid = true;
-
-                            if (!dataStore.getMissingWays().contains(refId))
-                                dataStore.getMissingWays().add(refId);
+                            valid = false;
                         }
                     }
 
@@ -275,9 +265,9 @@ public class OSMParser {
                     }
                 }
 
-                if (invalid) {
-                    invalidRelations++;
+                if (!valid) {
                     relationTotalCount++;
+                    dataStore.getInvalidRelations().add(newRelation);
                     continue;
                 }
 
@@ -292,6 +282,7 @@ public class OSMParser {
                     else {
                         System.out.println("Invalid geometry! id = " + newRelation.getId());
                         invalidRelationGeometries++;
+                        continue;
                     }
                 }
 
@@ -306,6 +297,7 @@ public class OSMParser {
                     else {
                         System.out.println("Invalid geometry! id = " + newRelation.getId());
                         invalidRelationGeometries++;
+                        continue;
                     }
                 }
 
@@ -328,9 +320,9 @@ public class OSMParser {
 
         System.out.println("Number of relations representing amenities:  " + relationAmenityCount);
         System.out.println("Number of relations representing roads:      " + relationRoadsCount);
-        System.out.println("Number of relations with missing references: " + invalidRelations);
+        System.out.println("Number of relations with missing references: " + dataStore.getInvalidRelations().size());
         System.out.println("Number of relations with invalid geometries: " + invalidRelationGeometries);
-        System.out.println("Total number of relations: " + relationTotalCount);
+        System.out.println("Total number of relations:                   " + relationTotalCount);
         System.out.println("Finished processing relations!");
 
         amenityCount += relationAmenityCount;
