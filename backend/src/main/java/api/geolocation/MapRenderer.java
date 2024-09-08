@@ -291,10 +291,10 @@ public class MapRenderer {
         }
     }
 
-    private void drawLand(List<LinearRing> innerPolygons, List<LinearRing> outerPolygons, Color color, Graphics2D g) {
+    private void drawLand(List<LinearRing> innerRings, List<LinearRing> outerRings, Color color, Graphics2D g) {
         Area area = new Area();
-        outerPolygons.forEach(poly -> area.add(new Area(convertToPolygon(poly))));
-        innerPolygons.forEach(poly -> area.subtract(new Area(convertToPolygon(poly))));
+        outerRings.forEach(poly -> area.add(new Area(convertToPolygon(poly))));
+        innerRings.forEach(poly -> area.subtract(new Area(convertToPolygon(poly))));
 
         g.setColor(color);
         g.fill(area);
@@ -302,7 +302,7 @@ public class MapRenderer {
 
     private void drawLands(List<Relation> relations, Color color, Graphics2D g) {
         for (Relation relation : relations) {
-            drawLand(relation.getInnerPolygons(), relation.getOuterPolygons(), color, g);
+            drawLand(relation.getInnerRings(), relation.getOuterRings(), color, g);
         }
     }
 
