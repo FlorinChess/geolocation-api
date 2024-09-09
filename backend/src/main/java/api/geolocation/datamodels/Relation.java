@@ -78,6 +78,9 @@ public class Relation implements IOSMDataModel {
             var polygons = new ArrayList<Polygon>();
             polygons.add(buildPolygon(outer, inners));
 
+            innerRings.addAll(inners);
+            outerRings.add(outer);
+
             return buildMultiPolygon(polygons);
         }
 
