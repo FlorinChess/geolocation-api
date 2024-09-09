@@ -14,7 +14,6 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -111,7 +110,6 @@ public class OSMParser {
         System.out.println("Total number of nodes:                  " + nodeTotalCount);
         System.out.println("Finished processing nodes!");
         amenityCount += nodeAmenitiesCount;
-        roadCount += nodeRoadsCount;
     }
 
     private void parseWays(NodeList ways, long count) {
