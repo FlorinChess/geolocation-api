@@ -28,7 +28,9 @@ public class MapRenderer {
     private final int tileSize = 512;
     private final DataStore dataStore = DataStore.getInstance();
     private final List<String> predefinedDrawingOrder =
-            Arrays.asList("residential", "vineyard", "grass", "cemetery", "forest", "water", "motorway", "truck", "road", "secondary", "primary", "railway", "building");
+            Arrays.asList(
+                "residential", "commercial", "vineyard", "grass", "meadow", "flowerbed", "cemetery", "forest", "farmland",
+                "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary", "railway", "building");
 
     public BufferedImage renderTile(int zoom, int x, int y, String layers) throws IOException {
         BufferedImage image = new BufferedImage(tileSize, tileSize, BufferedImage.TYPE_INT_RGB);
@@ -92,6 +94,7 @@ public class MapRenderer {
                     .filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
             drawLands(selectedRelation, giveColor(layer), g);
 
+
             if (layer.equals("water")){
                 drawLands(waterRelations, giveColor(layer), g);
                 drawRoads(waterWays, giveColor(layer), g);
@@ -104,6 +107,16 @@ public class MapRenderer {
                 List<Way> cemeteryWays = waysMap.values().stream()
                         .filter(way -> way.getTags().containsKey("landuse") && way.getTags().get("landuse").equals(layer)).toList();
                 drawRoads(cemeteryWays, giveColor(layer), g);
+            }
+            else if (layer.equals("commercial")) {
+                List<Way> commercialWays = waysMap.values().stream()
+                        .filter(way -> way.getTags().containsKey("landuse") && way.getTags().get("landuse").equals("commercial")).toList();
+                drawRoads(commercialWays, giveColor("commercial"), g);
+            }
+            else if (layer.equals("railway")) {
+                List<Way> railways = waysMap.values().stream()
+                        .filter(way -> way.getTags().containsKey("railway")).toList();
+                drawRoads(railways, giveColor("railway"), g);
             }
 
             List<Way> selectedRoads = roads.stream()
@@ -149,7 +162,13 @@ public class MapRenderer {
                 color = new Color(172,224,161);
                 break;
             case "grass":
+            case "meadow":
+            case "flowerbed":
                 color = new Color(205,235,176);
+                break;
+            case "farmland":
+            case "farmyard":
+                color = new Color(250, 231, 147);
                 break;
             case "cemetery":
                 color = new Color(182, 201, 167);
@@ -162,6 +181,11 @@ public class MapRenderer {
                 break;
             case "building":
                 color = new Color(189, 146, 123); //
+                break;
+            case "commercial":
+            case "industrial":
+                color = new Color(252, 180, 164);
+                break;
             default:
                 break;
         }
@@ -312,10 +336,10 @@ public class MapRenderer {
         }
     }
 
-    private void drawLand(List<LinearRing> innerRings, List<LinearRing> outerRings, Color color, Graphics2D g) {
+    private void drawLand(List<LinearRing> innerLinearRings, List<LinearRing> outerLinearRings, Color color, Graphics2D g) {
         Area area = new Area();
-        outerRings.forEach(poly -> area.add(new Area(convertToPolygon(poly))));
-        innerRings.forEach(poly -> area.subtract(new Area(convertToPolygon(poly))));
+        outerLinearRings.forEach(linearRing -> area.add(new Area(convertToPolygon(linearRing))));
+        innerLinearRings.forEach(linearRing -> area.subtract(new Area(convertToPolygon(linearRing))));
 
         g.setColor(color);
         g.fill(area);
