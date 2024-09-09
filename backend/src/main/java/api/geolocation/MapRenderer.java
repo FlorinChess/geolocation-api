@@ -30,7 +30,7 @@ public class MapRenderer {
     private final List<String> predefinedDrawingOrder =
             Arrays.asList(
                 "residential", "commercial", "vineyard", "grass", "meadow", "flowerbed", "cemetery", "garden", "park",
-                "forest", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
+                "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
                 "railway", "building");
 
     public BufferedImage renderTile(int zoom, int x, int y, String layers) throws IOException {
@@ -122,6 +122,11 @@ public class MapRenderer {
                         .filter(way -> way.getTags().containsKey("leisure") && way.getTags().get("leisure").equals(layer)).toList();
                 drawRoads(parks, giveColor(layer), g);
             }
+            else if (layer.equals("wood")) {
+                List<Way> woods = waysMap.values().stream()
+                        .filter(way -> way.getTags().containsKey("natural") && way.getTags().get("natural").equals(layer)).toList();
+                drawRoads(woods, giveColor(layer), g);
+            }
 
             List<Way> selectedRoads = roads.stream()
                     .filter(way -> way.getTags().get("highway")
@@ -157,6 +162,7 @@ public class MapRenderer {
                 color = new Color(128,128,128);
                 break;
             case "forest":
+            case "wood":
                 color = new Color(173,209,158);
                 break;
             case "residential":
