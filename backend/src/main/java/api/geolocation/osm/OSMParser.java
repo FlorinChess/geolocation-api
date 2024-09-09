@@ -271,7 +271,7 @@ public class OSMParser {
                     continue;
                 }
 
-                newRelation.toGeometryExperimental();
+                newRelation.toGeometry();
 
 //                Geometry geometry = newRelation.toGeometry();
 //                if (geometry == null) {
