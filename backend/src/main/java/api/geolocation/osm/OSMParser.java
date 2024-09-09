@@ -97,13 +97,6 @@ public class OSMParser {
                     nodeAmenitiesCount++;
                 }
 
-                // TODO: these could be crossings; not sure if they should be counted as roads
-                if (tags.containsKey("highway")) {
-                    Geometry geometry = newNode.toGeometry();
-                    dataStore.getRoads().put(id, new RoadModel(id, geometry, tags, new ArrayList<>()));
-                    nodeRoadsCount++;
-                }
-
                 dataStore.getNodes().put(id, newNode);
                 nodeTotalCount++;
             }
@@ -171,10 +164,9 @@ public class OSMParser {
                 // Set it back to null for garbage collection
                 // TODO: improve this; find a way to do this without garbage collection
                 newWay.setMissingNodes(null);
+                var geometry = newWay.toGeometry();
 
                 if (newWay.getTags().containsKey("amenity")) {
-                    var geometry = newWay.toGeometry();
-
                     AmenityModel newAmenity = new AmenityModel(newWay.getId(), geometry, newWay.getTags());
                     dataStore.getAmenities().put(newWay.getId(), newAmenity);
 
@@ -182,8 +174,6 @@ public class OSMParser {
                 }
 
                 if (newWay.getTags().containsKey("highway")) {
-                    var geometry = newWay.toGeometry();
-
                     RoadModel newRoad = new RoadModel(newWay.getId(), geometry, newWay.getTags(), newWay.getNodeIds());
                     dataStore.getRoads().put(newWay.getId(), newRoad);
 
@@ -271,6 +261,8 @@ public class OSMParser {
                     continue;
                 }
 
+                // TODO: improve for performance
+                newRelation.setMissingWays(null);
                 newRelation.toGeometry();
 
 //                Geometry geometry = newRelation.toGeometry();
