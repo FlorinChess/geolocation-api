@@ -24,48 +24,6 @@ public class Relation implements IOSMDataModel {
         outerRings = new ArrayList<>();
     }
 
-//    public List<LinearRing> getInnerPolygons() {
-//        if (!innerRings.isEmpty())
-//            return innerRings;
-//
-//        ArrayList<LinearRing> innerRings = new ArrayList<>();
-//
-//        for (int i = 0; i < members.size();) {
-//            ClosedCircle closedCircle = getNextClosed(i, members);
-//
-//            if (closedCircle != null && closedCircle.getLastRole().equals("inner")) {
-//                innerRings.add(closedCircle.getLinearRing());
-//            }
-//
-//            i = (int) (closedCircle != null ? closedCircle.getLastMemberIndex() + 1 : i + 1);
-//        }
-//        return innerRings;
-//    }
-//
-//    public List<LinearRing> getOuterPolygons() {
-//        if (!outerRings.isEmpty())
-//            return outerRings;
-//
-//        ArrayList<LinearRing> outerRings = new ArrayList<>();
-//
-//        for (int i = 0; i < members.size();) {
-//            ClosedCircle closedCircle = getNextClosed(i, members);
-//
-//            if (members.get(i).getRole().equals("outline")) {
-//                Way way = DataStore.getInstance().getWays().get(members.get(0).getRef());
-//                outerRings.add((LinearRing) way.toGeometry());
-//                return outerRings;
-//            }
-//
-//            if (closedCircle != null && closedCircle.getLastRole().equals("outer")) {
-//                outerRings.add(closedCircle.getLinearRing());
-//            }
-//
-//            i = (int) (closedCircle != null ? closedCircle.getLastMemberIndex() + 1 : i + 1);
-//        }
-//        return outerRings;
-//    }
-
     // TODO: manage geometries with members with roles "outline" and "part" (e.g. id = 8258274)
     public MultiPolygon toGeometry() throws RuntimeException {
         if (tags.containsValue("multipolygon")) {
