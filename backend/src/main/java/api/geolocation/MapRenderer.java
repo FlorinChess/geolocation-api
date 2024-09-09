@@ -29,8 +29,9 @@ public class MapRenderer {
     private final DataStore dataStore = DataStore.getInstance();
     private final List<String> predefinedDrawingOrder =
             Arrays.asList(
-                "residential", "commercial", "vineyard", "grass", "meadow", "flowerbed", "cemetery", "forest", "farmland",
-                "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary", "railway", "building");
+                "residential", "commercial", "vineyard", "grass", "meadow", "flowerbed", "cemetery", "garden", "park",
+                "forest", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
+                "railway", "building");
 
     public BufferedImage renderTile(int zoom, int x, int y, String layers) throws IOException {
         BufferedImage image = new BufferedImage(tileSize, tileSize, BufferedImage.TYPE_INT_RGB);
@@ -77,12 +78,6 @@ public class MapRenderer {
         List<Relation> landRelations = relationsMap.values().stream()
                 .filter(relation -> relation.getTags().containsKey("landuse")).toList();
 
-        List<Relation> waterRelations = relationsMap.values().stream()
-                .filter(relation -> relation.getTags().containsKey("water")).toList();
-
-        List<Way> waterWays = waysMap.values().stream()
-                .filter(way -> way.getTags().containsKey("water")).toList();
-
         List<Relation> buildingRelations = relationsMap.values().stream()
                 .filter(relation -> relation.getTags().containsKey("building")).toList();
         List<Way> buildingWays = waysMap.values().stream()
@@ -94,8 +89,12 @@ public class MapRenderer {
                     .filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
             drawLands(selectedRelation, giveColor(layer), g);
 
+            if (layer.equals("water")) {
+                List<Relation> waterRelations = relationsMap.values().stream()
+                        .filter(relation -> relation.getTags().containsKey("water")).toList();
 
-            if (layer.equals("water")){
+                List<Way> waterWays = waysMap.values().stream()
+                        .filter(way -> way.getTags().containsKey("water")).toList();
                 drawLands(waterRelations, giveColor(layer), g);
                 drawRoads(waterWays, giveColor(layer), g);
             }
@@ -117,6 +116,11 @@ public class MapRenderer {
                 List<Way> railways = waysMap.values().stream()
                         .filter(way -> way.getTags().containsKey("railway")).toList();
                 drawRoads(railways, giveColor("railway"), g);
+            }
+            else if (layer.equals("park") || layer.equals("garden")) {
+                List<Way> parks = waysMap.values().stream()
+                        .filter(way -> way.getTags().containsKey("leisure") && way.getTags().get("leisure").equals(layer)).toList();
+                drawRoads(parks, giveColor(layer), g);
             }
 
             List<Way> selectedRoads = roads.stream()
@@ -164,6 +168,8 @@ public class MapRenderer {
             case "grass":
             case "meadow":
             case "flowerbed":
+            case "garden":
+            case "park":
                 color = new Color(205,235,176);
                 break;
             case "farmland":
@@ -180,7 +186,7 @@ public class MapRenderer {
                 color = new Color(0,128,255);
                 break;
             case "building":
-                color = new Color(189, 146, 123); //
+                color = new Color(189, 146, 123);
                 break;
             case "commercial":
             case "industrial":
