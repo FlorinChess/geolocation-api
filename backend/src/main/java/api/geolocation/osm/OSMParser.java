@@ -271,23 +271,25 @@ public class OSMParser {
                     continue;
                 }
 
-                Geometry geometry = newRelation.toGeometry();
-                if (geometry == null) {
-                    System.out.println("Invalid geometry! id = " + newRelation.getId());
-                    invalidRelationGeometries++;
-                    continue;
-                }
-                if (newRelation.getTags().containsKey("amenity")) {
-                    AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
-                    dataStore.getAmenities().put(newRelation.getId(), newAmenity);
-                    relationAmenityCount++;
-                }
+                newRelation.toGeometryExperimental();
 
-                if (newRelation.getTags().containsKey("highway")) {
-                    RoadModel newRoad = new RoadModel(newRelation.getId(), geometry, newRelation.getTags(), new ArrayList<>());
-                    dataStore.getRoads().put(newRelation.getId(), newRoad);
-                    relationRoadsCount++;
-                }
+//                Geometry geometry = newRelation.toGeometry();
+//                if (geometry == null) {
+//                    System.out.println("Invalid geometry! id = " + newRelation.getId());
+//                    invalidRelationGeometries++;
+//                    continue;
+//                }
+//                if (newRelation.getTags().containsKey("amenity")) {
+//                    AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
+//                    dataStore.getAmenities().put(newRelation.getId(), newAmenity);
+//                    relationAmenityCount++;
+//                }
+//
+//                if (newRelation.getTags().containsKey("highway")) {
+//                    RoadModel newRoad = new RoadModel(newRelation.getId(), geometry, newRelation.getTags(), new ArrayList<>());
+//                    dataStore.getRoads().put(newRelation.getId(), newRoad);
+//                    relationRoadsCount++;
+//                }
 
                 dataStore.getRelations().put(newRelation.getId(), newRelation);
                 relationTotalCount++;

@@ -13,18 +13,84 @@ public class Relation implements IOSMDataModel {
     private List<Member> members;
     private List<Long> missingWays;
     private Map<String, String> tags;
-    private List<LinearRing> innerRings;
-    private List<LinearRing> outerRings;
+    private List<LinearRing> innerLinearRings;
+    private List<LinearRing> outerLinearRings;
 
     public Relation() {
         members = new ArrayList<>();
         missingWays = new ArrayList<>();
         tags = new HashMap<>();
-        innerRings = new ArrayList<>();
-        outerRings = new ArrayList<>();
+        innerLinearRings = new ArrayList<>();
+        outerLinearRings = new ArrayList<>();
+    }
+
+    public Geometry toGeometryExperimental() {
+        List<LineString> outerLineStrings = new ArrayList<>();
+        List<LineString> innerLineStrings = new ArrayList<>();
+
+        members.forEach(member -> {
+            Way way = DataStore.getInstance().getWays().get(member.getRef());
+            Geometry geometry = way.toGeometry();
+
+            switch (member.getRole()) {
+                case "outer":
+                    if (geometry.getGeometryType().equals(Geometry.TYPENAME_LINESTRING))
+                        outerLineStrings.add((LineString) geometry);
+                    else if (geometry.getGeometryType().equals(Geometry.TYPENAME_LINEARRING))
+                        outerLinearRings.add((LinearRing) geometry);
+                    break;
+                case "inner":
+                    if (geometry.getGeometryType().equals(Geometry.TYPENAME_LINESTRING))
+                        innerLineStrings.add((LineString) geometry);
+                    else if (geometry.getGeometryType().equals(Geometry.TYPENAME_LINEARRING))
+                        innerLinearRings.add((LinearRing) geometry);
+                    break;
+                default:
+                    // TODO buildings
+                    break;
+            }
+        });
+
+        // Build outer rings from line strings
+        if (!outerLineStrings.isEmpty()) {
+            LineMerger lineMerger = new LineMerger();
+            lineMerger.add(outerLineStrings);
+
+            var mergedLineStrings = lineMerger.getMergedLineStrings();
+            for (int i = 0; i < mergedLineStrings.size(); i++) {
+                try {
+                    LineString lineString = (LineString) mergedLineStrings.stream().findFirst().get();
+                    LinearRing linearRing = DataStore.geometryFactory.createLinearRing(lineString.getCoordinates());
+                    outerLinearRings.add(linearRing);
+                }
+                catch (Exception ex) {
+                    ex.printStackTrace(System.out);
+                }
+            }
+        }
+
+        // Build inner rings from line strings
+        if (!innerLineStrings.isEmpty()) {
+            LineMerger lineMerger = new LineMerger();
+            lineMerger.add(innerLineStrings);
+
+            var mergedLineStrings = lineMerger.getMergedLineStrings();
+            for (int i = 0; i < mergedLineStrings.size(); i++) {
+                try {
+                    LineString lineString = (LineString) mergedLineStrings.stream().findFirst().get();
+                    LinearRing linearRing = DataStore.geometryFactory.createLinearRing(lineString.getCoordinates());
+                    innerLinearRings.add(linearRing);
+                }
+                catch (Exception ex) {
+                    ex.printStackTrace(System.out);
+                }
+            }
+        }
+        return null;
     }
 
     // TODO: manage geometries with members with roles "outline" and "part" (e.g. id = 8258274)
+    // TODO: rework this shit; it is way too complicated and buggy
     public MultiPolygon toGeometry() throws RuntimeException {
         if (tags.containsValue("multipolygon")) {
             List<Polygon> polygons = new ArrayList<>();
@@ -78,8 +144,8 @@ public class Relation implements IOSMDataModel {
             var polygons = new ArrayList<Polygon>();
             polygons.add(buildPolygon(outer, inners));
 
-            innerRings.addAll(inners);
-            outerRings.add(outer);
+            innerLinearRings.addAll(inners);
+            outerLinearRings.add(outer);
 
             return buildMultiPolygon(polygons);
         }
@@ -114,9 +180,9 @@ public class Relation implements IOSMDataModel {
             // if not avoid this part
             if (geometry.getGeometryType().equals(Geometry.TYPENAME_LINEARRING) && member.getRole().equals(role)) {
                 if (role.equals("inner"))
-                    innerRings.add((LinearRing) geometry);
+                    innerLinearRings.add((LinearRing) geometry);
                 else if (role.equals("outer"))
-                    outerRings.add((LinearRing) geometry);
+                    outerLinearRings.add((LinearRing) geometry);
                 return new ClosedCircle((LinearRing) geometry, member.getRole(), i);
             }
             else if (geometry.getGeometryType().equals(Geometry.TYPENAME_LINESTRING) && member.getRole().equals(role)) {
@@ -132,9 +198,9 @@ public class Relation implements IOSMDataModel {
                         LinearRing linearRing = DataStore.geometryFactory.createLinearRing(lineString.getCoordinates());
 
                         if (role.equals("inner"))
-                            innerRings.add(linearRing);
+                            innerLinearRings.add(linearRing);
                         else if (role.equals("outer"))
-                            outerRings.add(linearRing);
+                            outerLinearRings.add(linearRing);
 
                         return new ClosedCircle(linearRing, role, i);
                     }
