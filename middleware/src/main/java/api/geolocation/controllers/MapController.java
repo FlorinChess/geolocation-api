@@ -224,7 +224,7 @@ public class MapController {
     }
 
     @SneakyThrows
-    private RoutingResponse loadRoute(Long from, Long to, String weighting) {
+    private RoutingResponse loadRoute(long from, long to, String weighting) {
         var request = RouteRequest.newBuilder()
                 .setFrom(from)
                 .setTo(to)
@@ -258,7 +258,7 @@ public class MapController {
         return routeResponse;
     }
 
-    private UsageResponse loadUsage(Double bboxTlX, Double bboxTlY, Double bboxBrX, Double bboxBrY) {
+    private UsageResponse loadUsage(double bboxTlX, double bboxTlY, double bboxBrX, double bboxBrY) {
         var request = UsageRequest.newBuilder()
                 .setBboxTlX(bboxTlX)
                 .setBboxTlY(bboxTlY)
@@ -314,7 +314,7 @@ public class MapController {
     }
 
     @SneakyThrows
-    public api.geolocation.datamodels.Amenity loadAmenityById(Long id) {
+    public api.geolocation.datamodels.Amenity loadAmenityById(long id) {
         api.geolocation.datamodels.Amenity amenity = null;
 
         AmenityByIdRequest request = AmenityByIdRequest.newBuilder().setId(id).build();
@@ -341,7 +341,7 @@ public class MapController {
     }
 
     @SneakyThrows
-    public api.geolocation.datamodels.Road loadRoadById(Long id) {
+    public api.geolocation.datamodels.Road loadRoadById(long id) {
         api.geolocation.datamodels.Road road = null;
 
         RoadByIdRequest request = RoadByIdRequest.newBuilder().setId(id).build();
@@ -370,10 +370,10 @@ public class MapController {
 
     public List<api.geolocation.datamodels.Amenity> loadAmenitiesByBoundingBox(
             String amenity,
-            Double bboxTlX,
-            Double bboxTlY,
-            Double bboxBrX,
-            Double bboxBrY,
+            double bboxTlX,
+            double bboxTlY,
+            double bboxBrX,
+            double bboxBrY,
             int take,
             int skip) {
 
