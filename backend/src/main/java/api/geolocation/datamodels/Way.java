@@ -7,7 +7,7 @@ import lombok.Data;
 import org.locationtech.jts.geom.*;
 
 @Data
-public class Way implements IOSMDataModel {
+public class Way {
     private long id;
     private Map<String, String> tags;
     private List<Long> missingNodes;
@@ -45,9 +45,4 @@ public class Way implements IOSMDataModel {
 
         return ids;
     }
-
-    public OSMDataModelType getType() {
-        return OSMDataModelType.Way;
-    }
-
 }

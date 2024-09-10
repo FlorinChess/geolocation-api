@@ -16,11 +16,4 @@ public class AmenityModel {
         this.tags = tags;
         this.id = id;
     }
-
-    public AmenityModel(IOSMDataModel dataModel) {
-        this.id = dataModel.getId();
-        this.geometry = dataModel.toGeometry();
-        this.tags = dataModel.getTags();
-    }
-
 }

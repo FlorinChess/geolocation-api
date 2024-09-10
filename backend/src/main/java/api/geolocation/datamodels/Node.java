@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Data
-public class Node implements IOSMDataModel {
+public class Node {
     private long id;
     private double lat;
     private double lon;
@@ -33,10 +33,6 @@ public class Node implements IOSMDataModel {
 
         return new Point(CoordinateArraySequenceFactory.instance()
                 .create(coordinates), DataStore.geometryFactory);
-    }
-
-    public OSMDataModelType getType() {
-        return OSMDataModelType.Node;
     }
 
     @Override

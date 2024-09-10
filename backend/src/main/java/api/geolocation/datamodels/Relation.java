@@ -8,7 +8,7 @@ import org.locationtech.jts.operation.linemerge.LineMerger;
 import java.util.*;
 
 @Data
-public class Relation implements IOSMDataModel {
+public class Relation {
     private long id;
     private List<Member> members;
     private List<Long> missingWays;
@@ -105,9 +105,5 @@ public class Relation implements IOSMDataModel {
 
     private Polygon buildPolygon(LinearRing shell, List<LinearRing> holes) {
         return DataStore.geometryFactory.createPolygon(shell, holes.toArray(new LinearRing[0]));
-    }
-
-    public OSMDataModelType getType() {
-        return OSMDataModelType.Relation;
     }
 }

@@ -19,11 +19,4 @@ public class RoadModel {
         this.tags = tags;
         this.nodeRefs = nodeRefs;
     }
-
-    public RoadModel(IOSMDataModel dataModel, List<Long> nodeRefs) {
-        this.id = dataModel.getId();
-        this.geometry = dataModel.toGeometry();
-        this.tags = dataModel.getTags();
-        this.nodeRefs = nodeRefs;
-    }
 }
