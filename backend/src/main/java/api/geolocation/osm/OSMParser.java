@@ -261,25 +261,17 @@ public class OSMParser {
 
                 // TODO: improve for performance
                 newRelation.setMissingWays(null);
-                newRelation.toGeometry();
-
-//                Geometry geometry = newRelation.toGeometry();
-//                if (geometry == null) {
-//                    System.out.println("Invalid geometry! id = " + newRelation.getId());
-//                    invalidRelationGeometries++;
-//                    continue;
-//                }
-//                if (newRelation.getTags().containsKey("amenity")) {
-//                    AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
-//                    dataStore.getAmenities().put(newRelation.getId(), newAmenity);
-//                    relationAmenityCount++;
-//                }
-//
-//                if (newRelation.getTags().containsKey("highway")) {
-//                    RoadModel newRoad = new RoadModel(newRelation.getId(), geometry, newRelation.getTags(), new ArrayList<>());
-//                    dataStore.getRoads().put(newRelation.getId(), newRoad);
-//                    relationRoadsCount++;
-//                }
+                Geometry geometry = newRelation.toGeometry();
+                if (geometry == null) {
+                    System.out.println("Invalid geometry! id = " + newRelation.getId());
+                    invalidRelationGeometries++;
+                    continue;
+                }
+                if (newRelation.getTags().containsKey("amenity")) {
+                    AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
+                    dataStore.getAmenities().put(newRelation.getId(), newAmenity);
+                    relationAmenityCount++;
+                }
 
                 dataStore.getRelations().put(newRelation.getId(), newRelation);
                 relationTotalCount++;
@@ -306,7 +298,6 @@ public class OSMParser {
         System.out.println("Finished processing relations!");
 
         amenityCount += relationAmenityCount;
-        roadCount += relationRoadsCount;
     }
 
     private void initialize() {

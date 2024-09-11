@@ -4,7 +4,6 @@ import api.geolocation.DataStore;
 import lombok.Data;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.operation.linemerge.LineMerger;
-
 import java.util.*;
 
 @Data
@@ -45,16 +44,13 @@ public class Relation {
                     else if (geometry.getGeometryType().equals(Geometry.TYPENAME_LINEARRING))
                         innerLinearRings.add((LinearRing) geometry);
                     break;
-
                 case "outline":
                     outerLinearRings.add((LinearRing) geometry);
                     break;
                 case "part":
                     innerLinearRings.add((LinearRing) geometry);
                     break;
-
                 default:
-                    // TODO
                     break;
             }
         });
@@ -96,14 +92,34 @@ public class Relation {
         }
 
         // TODO: build outer and inner polygons, populate multipolygon and return it
-        return null;
+        List<Polygon> polygons = new ArrayList<>();
+        for (LinearRing outerLinearRing : outerLinearRings) {
+
+            List<LinearRing> holes = new ArrayList<>();
+
+            for (LinearRing innerLinearRing : innerLinearRings) {
+                if (outerLinearRing.contains(innerLinearRing)) {
+                    holes.add(innerLinearRing);
+                }
+            }
+
+            polygons.add(buildPolygon(outerLinearRing, holes));
+        }
+
+        return buildMultiPolygon(polygons);
     }
 
     private MultiPolygon buildMultiPolygon(List<Polygon> polygons) {
+        if (polygons.isEmpty())
+            return null;
+
         return DataStore.geometryFactory.createMultiPolygon(polygons.toArray(new Polygon[0]));
     }
 
     private Polygon buildPolygon(LinearRing shell, List<LinearRing> holes) {
-        return DataStore.geometryFactory.createPolygon(shell, holes.toArray(new LinearRing[0]));
+        if (holes.isEmpty())
+            return DataStore.geometryFactory.createPolygon(shell, null);
+        else
+            return DataStore.geometryFactory.createPolygon(shell, holes.toArray(new LinearRing[0]));
     }
 }
