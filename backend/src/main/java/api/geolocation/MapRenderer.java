@@ -29,8 +29,8 @@ public class MapRenderer {
     private final DataStore dataStore = DataStore.getInstance();
     private final List<String> predefinedDrawingOrder =
             Arrays.asList(
-                "residential", "commercial", "vineyard", "grass", "meadow", "flowerbed", "cemetery", "garden", "park",
-                "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
+                "residential", "commercial", "education", "vineyard", "grass", "meadow", "flowerbed", "cemetery", "garden", "park", "greenfield",
+                "pitch", "stadium", "sports_centre", "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
                 "railway", "building");
 
     public BufferedImage renderTile(int zoom, int x, int y, String layers) throws IOException {
@@ -75,8 +75,11 @@ public class MapRenderer {
         List<Way> roads = waysMap.values().stream()
                 .filter(way -> way.getTags().containsKey("highway")).toList();
 
-        List<Relation> landRelations = relationsMap.values().stream()
+        List<Relation> landuseRelations = relationsMap.values().stream()
                 .filter(relation -> relation.getTags().containsKey("landuse")).toList();
+
+        List<Way> landuseWays = waysMap.values().stream()
+                .filter(way -> way.getTags().containsKey("landuse")).toList();
 
         List<Relation> buildingRelations = relationsMap.values().stream()
                 .filter(relation -> relation.getTags().containsKey("building")).toList();
@@ -85,7 +88,7 @@ public class MapRenderer {
 
         for (String layer : layersArray) {
 
-            List<Relation> selectedRelation = landRelations.stream()
+            List<Relation> selectedRelation = landuseRelations.stream()
                     .filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
             drawLands(selectedRelation, giveColor(layer), g);
 
@@ -102,22 +105,17 @@ public class MapRenderer {
                 drawLands(buildingRelations, giveColor(layer), g);
                 drawRoads(buildingWays, giveColor(layer), g);
             }
-            else if (layer.equals("cemetery")) {
-                List<Way> cemeteryWays = waysMap.values().stream()
-                        .filter(way -> way.getTags().containsKey("landuse") && way.getTags().get("landuse").equals(layer)).toList();
+            else if (layer.equals("cemetery") || layer.equals("commercial") || layer.equals("forest") || layer.equals("greenfield")) {
+                List<Way> cemeteryWays = landuseWays.stream()
+                        .filter(way -> way.getTags().get("landuse").equals(layer)).toList();
                 drawRoads(cemeteryWays, giveColor(layer), g);
-            }
-            else if (layer.equals("commercial")) {
-                List<Way> commercialWays = waysMap.values().stream()
-                        .filter(way -> way.getTags().containsKey("landuse") && way.getTags().get("landuse").equals("commercial")).toList();
-                drawRoads(commercialWays, giveColor("commercial"), g);
             }
             else if (layer.equals("railway")) {
                 List<Way> railways = waysMap.values().stream()
                         .filter(way -> way.getTags().containsKey("railway")).toList();
                 drawRoads(railways, giveColor("railway"), g);
             }
-            else if (layer.equals("park") || layer.equals("garden")) {
+            else if (layer.equals("park") || layer.equals("garden") || layer.equals("pitch") || layer.equals("stadium") || layer.equals("sports_centre")) {
                 List<Way> parks = waysMap.values().stream()
                         .filter(way -> way.getTags().containsKey("leisure") && way.getTags().get("leisure").equals(layer)).toList();
                 drawRoads(parks, giveColor(layer), g);
@@ -166,6 +164,8 @@ public class MapRenderer {
                 color = new Color(173,209,158);
                 break;
             case "residential":
+            case "commercial":
+            case "industrial":
                 color = new Color(223,233,233);
                 break;
             case "vineyard":
@@ -176,7 +176,13 @@ public class MapRenderer {
             case "flowerbed":
             case "garden":
             case "park":
+            case "greenfield":
                 color = new Color(205,235,176);
+                break;
+            case "pitch":
+            case "stadium":
+            case "sports_centre":
+                color = new Color(150, 227, 196);
                 break;
             case "farmland":
             case "farmyard":
@@ -194,10 +200,13 @@ public class MapRenderer {
             case "building":
                 color = new Color(189, 146, 123);
                 break;
-            case "commercial":
-            case "industrial":
-                color = new Color(252, 180, 164);
+            case "education":
+                color = new Color(255, 236, 184);
                 break;
+//            case "commercial":
+//            case "industrial":
+//                color = new Color(252, 180, 164);
+//                break;
             default:
                 break;
         }
