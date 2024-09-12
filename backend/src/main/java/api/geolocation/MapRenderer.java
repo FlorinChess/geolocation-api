@@ -287,46 +287,6 @@ public class MapRenderer {
 
     }
 
-    static double maxLat(List<Node> nodeLat) {
-        double maximumLatitude = 0;
-        for (Node node : nodeLat) {
-            if (node.getLat() > maximumLatitude) {
-                maximumLatitude = node.getLat();
-            }
-        }
-        return maximumLatitude;
-    }
-
-    static double maxLon(List<Node> nodeLon) {
-        double maximumLongitude = 0;
-        for (Node node : nodeLon) {
-            if (node.getLon() > maximumLongitude) {
-                maximumLongitude = node.getLon();
-            }
-        }
-        return maximumLongitude;
-    }
-
-    static double minLon(List<Node> nodeLon) {
-        double minimumLongitude = 0xB00B5;
-        for (Node node : nodeLon) {
-            if (node.getLon() < minimumLongitude) {
-                minimumLongitude = node.getLon();
-            }
-        }
-        return minimumLongitude;
-    }
-
-    static double minLat(List<Node> nodeLat) {
-        double minimumLatitude = 0xB00B5;
-        for (Node node : nodeLat) {
-            if (node.getLat() < minimumLatitude) {
-                minimumLatitude = node.getLat();
-            }
-        }
-        return minimumLatitude;
-    }
-
     public Polygon nodelistToPolygon(List<Node> nodeList) {
         int[] x = new int[nodeList.size()];
         int[] y = new int[nodeList.size()];
@@ -379,14 +339,11 @@ public class MapRenderer {
     }
 
     public BufferedImage flipImage(BufferedImage image) {
-        int width = tileSize;
-        int height = tileSize;
-
-        BufferedImage flippedImage = new BufferedImage(width, height, image.getType());
+        BufferedImage flippedImage = new BufferedImage(tileSize, tileSize, image.getType());
         Graphics2D g2 = flippedImage.createGraphics();
 
         AffineTransform transform = new AffineTransform();
-        transform.translate(height, 0);
+        transform.translate(tileSize, 0);
         transform.rotate(Math.toRadians(90));
 
         g2.setTransform(transform);
