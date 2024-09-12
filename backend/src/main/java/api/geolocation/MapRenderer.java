@@ -70,8 +70,6 @@ public class MapRenderer {
             return indexA.compareTo(indexB);
         });
 
-//        System.out.println(layersArray);
-
         List<Way> roads = waysMap.values().stream()
                 .filter(way -> way.getTags().containsKey("highway")).toList();
 
@@ -266,7 +264,8 @@ public class MapRenderer {
             if (startCoordinate.equals(endCoordinate)) {
                 g.setColor(color);
                 g.fill(nodelistToPolygon(nodes));
-//                return;
+                // Seems to help with performance, but some buildings don't show up
+                return;
             }
 
             startCoordinate = null;
