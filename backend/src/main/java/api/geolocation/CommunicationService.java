@@ -237,20 +237,10 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
     @Override
     public void getTile(TileRequest request, StreamObserver<TileResponse> observer) {
-        MapLogger.backendLogMapRequest(
-                request.getX(),
-                request.getY(),
-                request.getZ(),
-                Arrays.stream(request.getLayers().split(",")).toList());
-
         var responseBuilder = TileResponse.newBuilder();
 
         try {
-            var image = mapRenderer.renderTile(
-                    request.getZ(),
-                    request.getX(),
-                    request.getY(),
-                    request.getLayers());
+            var image = mapRenderer.renderTile(request.getZ(), request.getX(), request.getY(), request.getLayers());
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ImageIO.write(image, "png", outputStream);
@@ -272,6 +262,12 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
         observer.onNext(response);
         observer.onCompleted();
+
+        MapLogger.backendLogMapRequest(
+                request.getX(),
+                request.getY(),
+                request.getZ(),
+                Arrays.stream(request.getLayers().split(",")).toList());
     }
 
     @Override
