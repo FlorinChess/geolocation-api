@@ -30,7 +30,7 @@ public class MapRenderer {
     private final List<String> predefinedDrawingOrder =
             Arrays.asList(
                 "residential", "commercial", "education", "vineyard", "grass", "meadow", "flowerbed", "cemetery", "garden", "park", "greenfield",
-                "pitch", "stadium", "sports_centre", "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
+                "pitch", "stadium", "sports_centre", "track", "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
                 "railway", "building");
 
     public BufferedImage renderTile(int zoom, int x, int y, String layers) throws IOException {
@@ -115,7 +115,7 @@ public class MapRenderer {
                         .filter(way -> way.getTags().containsKey("railway")).toList();
                 drawRoads(railways, giveColor("railway"), g);
             }
-            else if (layer.equals("park") || layer.equals("garden") || layer.equals("pitch") || layer.equals("stadium") || layer.equals("sports_centre")) {
+            else if (layer.equals("park") || layer.equals("garden") || layer.equals("pitch") || layer.equals("stadium") || layer.equals("sports_centre") || layer.equals("track")) {
                 List<Way> parks = waysMap.values().stream()
                         .filter(way -> way.getTags().containsKey("leisure") && way.getTags().get("leisure").equals(layer)).toList();
                 drawRoads(parks, giveColor(layer), g);
@@ -182,6 +182,7 @@ public class MapRenderer {
             case "pitch":
             case "stadium":
             case "sports_centre":
+            case "track":
                 color = new Color(150, 227, 196);
                 break;
             case "farmland":
@@ -203,10 +204,6 @@ public class MapRenderer {
             case "education":
                 color = new Color(255, 236, 184);
                 break;
-//            case "commercial":
-//            case "industrial":
-//                color = new Color(252, 180, 164);
-//                break;
             default:
                 break;
         }
@@ -214,19 +211,10 @@ public class MapRenderer {
     }
 
     public boolean isRoad(String type) {
-        boolean state = false;
-        switch (type) {
-            case "motorway":
-            case "trunk":
-            case "primary":
-            case "secondary":
-            case "water":
-                state = true;
-                break;
-            default:
-                break;
-        }
-        return state;
+        return switch (type) {
+            case "motorway", "trunk", "primary", "secondary", "water" -> true;
+            default -> false;
+        };
     }
 
     // sources: https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Java
