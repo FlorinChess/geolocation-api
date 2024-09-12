@@ -29,7 +29,7 @@ public class MapRenderer {
     private final DataStore dataStore = DataStore.getInstance();
     private final List<String> predefinedDrawingOrder =
             Arrays.asList(
-                "residential", "commercial", "education", "vineyard", "grass", "meadow", "flowerbed", "cemetery", "garden", "park", "greenfield",
+                "residential", "commercial", "industrial", "education", "vineyard", "grass", "meadow", "flowerbed", "cemetery", "garden", "park", "greenfield",
                 "pitch", "stadium", "sports_centre", "track", "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
                 "railway", "building");
 
@@ -70,7 +70,7 @@ public class MapRenderer {
             return indexA.compareTo(indexB);
         });
 
-        System.out.println(layersArray);
+//        System.out.println(layersArray);
 
         List<Way> roads = waysMap.values().stream()
                 .filter(way -> way.getTags().containsKey("highway")).toList();
@@ -80,11 +80,6 @@ public class MapRenderer {
 
         List<Way> landuseWays = waysMap.values().stream()
                 .filter(way -> way.getTags().containsKey("landuse")).toList();
-
-        List<Relation> buildingRelations = relationsMap.values().stream()
-                .filter(relation -> relation.getTags().containsKey("building")).toList();
-        List<Way> buildingWays = waysMap.values().stream()
-                .filter(way -> way.getTags().containsKey("building")).toList();
 
         for (String layer : layersArray) {
 
@@ -102,6 +97,10 @@ public class MapRenderer {
                 drawRoads(waterWays, giveColor(layer), g);
             }
             else if (layer.equals("building")) {
+                List<Relation> buildingRelations = relationsMap.values().stream()
+                        .filter(relation -> relation.getTags().containsKey("building")).toList();
+                List<Way> buildingWays = waysMap.values().stream()
+                        .filter(way -> way.getTags().containsKey("building")).toList();
                 drawLands(buildingRelations, giveColor(layer), g);
                 drawRoads(buildingWays, giveColor(layer), g);
             }
@@ -125,12 +124,12 @@ public class MapRenderer {
                         .filter(way -> way.getTags().containsKey("natural") && way.getTags().get("natural").equals(layer)).toList();
                 drawRoads(woods, giveColor(layer), g);
             }
-
-            List<Way> selectedRoads = roads.stream()
-                    .filter(way -> way.getTags().get("highway")
-                    .equals(layer) || (!(isRoad(way.getTags().get("highway"))) && layer.equals("road"))).toList();
-            drawRoads(selectedRoads, giveColor(layer), g);
-
+            else {
+                List<Way> selectedRoads = roads.stream()
+                        .filter(way -> way.getTags().get("highway")
+                                .equals(layer) || (!(isRoad(way.getTags().get("highway"))) && layer.equals("road"))).toList();
+                drawRoads(selectedRoads, giveColor(layer), g);
+            }
         }
 
         image = flipImageCounterClockwise(image);
@@ -267,6 +266,7 @@ public class MapRenderer {
             if (startCoordinate.equals(endCoordinate)) {
                 g.setColor(color);
                 g.fill(nodelistToPolygon(nodes));
+//                return;
             }
 
             startCoordinate = null;
