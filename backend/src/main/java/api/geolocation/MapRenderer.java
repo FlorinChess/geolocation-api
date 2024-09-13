@@ -29,8 +29,9 @@ public class MapRenderer {
     private final DataStore dataStore = DataStore.getInstance();
     private final List<String> predefinedDrawingOrder =
             Arrays.asList(
-                "residential", "commercial", "industrial", "education", "vineyard", "grass", "meadow", "flowerbed", "cemetery", "garden", "park", "greenfield",
-                "pitch", "stadium", "sports_centre", "track", "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
+                "residential", "garages", "commercial", "industrial", "education", "vineyard", "grass", "meadow", "flowerbed",
+                "village_green", "recreation_ground", "cemetery", "garden", "park", "greenfield", "pitch", "stadium", "sports_centre",
+                "track", "playground", "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
                 "railway", "building");
 
     public BufferedImage renderTile(int zoom, int x, int y, String layers) throws IOException {
@@ -64,7 +65,7 @@ public class MapRenderer {
         }
 
         // Sort the list using a custom comparator based on the predefined order
-        Collections.sort(layersArray, (a, b) -> {
+        layersArray.sort((a, b) -> {
             Integer indexA = orderMap.getOrDefault(a, Integer.MAX_VALUE); // Default to max if not found
             Integer indexB = orderMap.getOrDefault(b, Integer.MAX_VALUE);
             return indexA.compareTo(indexB);
@@ -81,9 +82,7 @@ public class MapRenderer {
 
         for (String layer : layersArray) {
 
-            List<Relation> selectedRelation = landuseRelations.stream()
-                    .filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
-            drawLands(selectedRelation, giveColor(layer), g);
+
 
             switch (layer) {
                 case "water" -> {
@@ -103,9 +102,13 @@ public class MapRenderer {
                     drawLands(buildingRelations, giveColor(layer), g);
                     drawRoads(buildingWays, giveColor(layer), g);
                 }
-                case "cemetery", "commercial", "forest", "greenfield" -> {
+                case "residential", "garages", "education", "industrial", "cemetery", "commercial", "forest", "greenfield",
+                     "grass", "meadow", "flowerbed", "vineyard", "farmland", "farmyard", "village_green", "recreation_ground" -> {
                     List<Way> cemeteryWays = landuseWays.stream()
                             .filter(way -> way.getTags().get("landuse").equals(layer)).toList();
+                    List<Relation> selectedRelation = landuseRelations.stream()
+                            .filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
+                    drawLands(selectedRelation, giveColor(layer), g);
                     drawRoads(cemeteryWays, giveColor(layer), g);
                 }
                 case "railway" -> {
@@ -113,7 +116,7 @@ public class MapRenderer {
                             .filter(way -> way.getTags().containsKey("railway")).toList();
                     drawRoads(railways, giveColor("railway"), g);
                 }
-                case "park", "garden", "pitch", "stadium", "sports_centre", "track" -> {
+                case "park", "garden", "pitch", "stadium", "sports_centre", "track", "playground" -> {
                     List<Way> parks = waysMap.values().stream()
                             .filter(way -> way.getTags().containsKey("leisure") && way.getTags().get("leisure").equals(layer)).toList();
                     drawRoads(parks, giveColor(layer), g);
@@ -149,9 +152,9 @@ public class MapRenderer {
             case "secondary" -> color = new Color(255, 255, 0);
             case "road" -> color = new Color(128, 128, 128);
             case "forest", "wood" -> color = new Color(173, 209, 158);
-            case "residential", "commercial", "industrial" -> color = new Color(223, 233, 233);
+            case "residential", "garages", "commercial", "industrial" -> color = new Color(223, 233, 233);
             case "vineyard" -> color = new Color(172, 224, 161);
-            case "grass", "meadow", "flowerbed", "garden", "park", "greenfield" -> color = new Color(205, 235, 176);
+            case "grass", "meadow", "flowerbed", "garden", "park", "greenfield", "village_green", "recreation_ground", "playground" -> color = new Color(205, 235, 176);
             case "pitch", "stadium", "sports_centre", "track" -> color = new Color(150, 227, 196);
             case "farmland", "farmyard" -> color = new Color(250, 231, 147);
             case "cemetery" -> color = new Color(182, 201, 167);
