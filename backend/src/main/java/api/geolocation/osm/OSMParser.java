@@ -106,7 +106,6 @@ public class OSMParser {
         }
 
         System.out.println("Number of nodes representing amenities: " + nodeAmenitiesCount);
-        System.out.println("Number of nodes representing roads:     " + nodeRoadsCount);
         System.out.println("Total number of nodes:                  " + nodeTotalCount);
         System.out.println("Finished processing nodes!");
         amenityCount += nodeAmenitiesCount;
@@ -160,10 +159,8 @@ public class OSMParser {
                 }
 
                 // Set it back to null for garbage collection
-                // TODO: improve this; find a way to do this without garbage collection
                 newWay.setMissingNodes(null);
                 var geometry = newWay.toGeometry();
-
                 if (newWay.getTags().containsKey("amenity")) {
                     AmenityModel newAmenity = new AmenityModel(newWay.getId(), geometry, newWay.getTags());
                     dataStore.getAmenities().put(newWay.getId(), newAmenity);
@@ -240,7 +237,7 @@ public class OSMParser {
                             newRelation.getMembers().add(newMember);
                         }
                         else {
-                            newRelation.getMissingWays().add(refId);
+                            newRelation.getMissingMembers().add(newMember);
                             valid = false;
                         }
                     }
@@ -259,8 +256,7 @@ public class OSMParser {
                     continue;
                 }
 
-                // TODO: improve for performance
-                newRelation.setMissingWays(null);
+                newRelation.setMissingMembers(null);
                 Geometry geometry = newRelation.toGeometry();
                 if (geometry == null) {
                     System.out.println("Invalid geometry! id = " + newRelation.getId());

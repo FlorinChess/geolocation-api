@@ -10,14 +10,14 @@ import java.util.*;
 public class Relation {
     private long id;
     private List<Member> members;
-    private List<Long> missingWays;
+    private List<Member> missingMembers;
     private Map<String, String> tags;
     private List<LinearRing> innerLinearRings;
     private List<LinearRing> outerLinearRings;
 
     public Relation() {
         members = new ArrayList<>();
-        missingWays = new ArrayList<>();
+        missingMembers = new ArrayList<>();
         tags = new HashMap<>();
         innerLinearRings = new ArrayList<>();
         outerLinearRings = new ArrayList<>();
