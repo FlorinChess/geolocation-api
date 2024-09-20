@@ -71,45 +71,42 @@ public class MapRenderer {
             return indexA.compareTo(indexB);
         });
 
-        List<Way> roads = waysMap.values().stream()
+        List<Way> roads = waysMap.values().stream().parallel()
                 .filter(way -> way.getTags().containsKey("highway")).toList();
 
-        List<Relation> landuseRelations = relationsMap.values().stream()
+        List<Relation> landuseRelations = relationsMap.values().stream().parallel()
                 .filter(relation -> relation.getTags().containsKey("landuse")).toList();
 
-        List<Way> landuseWays = waysMap.values().stream()
+        List<Way> landuseWays = waysMap.values().stream().parallel()
                 .filter(way -> way.getTags().containsKey("landuse")).toList();
 
         for (String layer : layersArray) {
-
-
-
             switch (layer) {
                 case "water" -> {
-                    List<Relation> waterRelations = relationsMap.values().stream()
+                    List<Relation> waterRelations = relationsMap.values().stream().parallel()
                             .filter(relation -> relation.getTags().containsKey("water")).toList();
 
-                    List<Way> waterWays = waysMap.values().stream()
+                    List<Way> waterWays = waysMap.values().stream().parallel()
                             .filter(way -> way.getTags().containsKey("water")).toList();
                     drawLands(waterRelations, giveColor(layer), g);
                     drawRoads(waterWays, giveColor(layer), g);
                 }
                 case "building" -> {
-                    List<Relation> buildingRelations = relationsMap.values().stream()
+                    List<Relation> buildingRelations = relationsMap.values().stream().parallel()
                             .filter(relation -> relation.getTags().containsKey("building")).toList();
-                    List<Way> buildingWays = waysMap.values().stream()
+                    List<Way> buildingWays = waysMap.values().stream().parallel()
                             .filter(way -> way.getTags().containsKey("building")).toList();
                     drawLands(buildingRelations, giveColor(layer), g);
                     drawRoads(buildingWays, giveColor(layer), g);
                 }
                 case "residential", "garages", "education", "industrial", "cemetery", "commercial", "forest", "greenfield",
                      "grass", "meadow", "flowerbed", "vineyard", "farmland", "farmyard", "village_green", "recreation_ground" -> {
-                    List<Way> cemeteryWays = landuseWays.stream()
+                    List<Way> selectedWays = landuseWays.stream().parallel()
                             .filter(way -> way.getTags().get("landuse").equals(layer)).toList();
-                    List<Relation> selectedRelation = landuseRelations.stream()
+                    List<Relation> selectedRelations = landuseRelations.stream().parallel()
                             .filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
-                    drawLands(selectedRelation, giveColor(layer), g);
-                    drawRoads(cemeteryWays, giveColor(layer), g);
+                    drawLands(selectedRelations, giveColor(layer), g);
+                    drawRoads(selectedWays, giveColor(layer), g);
                 }
                 case "railway" -> {
                     List<Way> railways = waysMap.values().stream()
@@ -117,19 +114,20 @@ public class MapRenderer {
                     drawRoads(railways, giveColor("railway"), g);
                 }
                 case "park", "garden", "pitch", "stadium", "sports_centre", "track", "playground" -> {
-                    List<Way> parks = waysMap.values().stream()
+                    List<Way> parks = waysMap.values().stream().parallel()
                             .filter(way -> way.getTags().containsKey("leisure") && way.getTags().get("leisure").equals(layer)).toList();
                     drawRoads(parks, giveColor(layer), g);
                 }
                 case "wood" -> {
-                    List<Way> woods = waysMap.values().stream()
+                    List<Way> woods = waysMap.values().stream().parallel()
                             .filter(way -> way.getTags().containsKey("natural") && way.getTags().get("natural").equals(layer)).toList();
                     drawRoads(woods, giveColor(layer), g);
                 }
                 default -> {
-                    List<Way> selectedRoads = roads.stream()
-                            .filter(way -> way.getTags().get("highway")
-                                    .equals(layer) || (!(isRoad(way.getTags().get("highway"))) && layer.equals("road"))).toList();
+                    // TODO: Simplify this maybe
+                    List<Way> selectedRoads = roads.stream().parallel()
+                            .filter(way -> way.getTags().get("highway").equals(layer) ||
+                                    (!(isRoad(way.getTags().get("highway"))) && layer.equals("road"))).toList();
                     drawRoads(selectedRoads, giveColor(layer), g);
                 }
             }
