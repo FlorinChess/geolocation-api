@@ -27,7 +27,7 @@ public class MapServiceServer {
 
         parseOSMFile();
 
-        fixInvalidEntries();
+         fixInvalidEntries();
 
         startServer();
     }
@@ -133,7 +133,7 @@ public class MapServiceServer {
                         System.out.println("Querying for id = " + missingMember.getRef());
                         JsonNode response = OSMFinder.fetchWay(missingMember.getRef());
 
-                        if (response.has("elements") && response.get("elements").isArray()) {
+                        if (response != null && response.has("elements") && response.get("elements").isArray()) {
                             for (JsonNode element : response.get("elements")) {
                                 if ("way".equals(element.get("type").asText())) {
                                     Way missingWay = new Way();
@@ -155,7 +155,7 @@ public class MapServiceServer {
                                                 System.out.println("Fetching missing node id = " + nodeId);
                                                 JsonNode responseNode = OSMFinder.fetchNode(nodeId);
 
-                                                if (responseNode.has("elements") && responseNode.get("elements").isArray()) {
+                                                if (responseNode != null && responseNode.has("elements") && responseNode.get("elements").isArray()) {
                                                     for (JsonNode elementNode : responseNode.get("elements")) {
                                                         if ("node".equals(elementNode.get("type").asText())) {
                                                             Node missingNode = new Node();
