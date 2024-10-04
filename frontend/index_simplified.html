@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Image Grid</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        #image-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .grid-item img {
+            width: 100%;
+            height: 100%;
+        }
+
+        #loading {
+            display: none;
+            font-size: 1.5em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+<button id="button" style="z-index: 10" onclick="fetchImages()">Fetch Images</button>
+<p id="loading" style="z-index: 11">Loading...</p>
+
+<div id="image-grid"></div>
+
+<script>
+    const apiUrl = 'http://localhost:8010/tile/14/';  // Replace with your API URL
+
+    // Function to fetch and display 12 images
+    async function fetchImages() {
+        const grid = document.getElementById('image-grid');
+        const loadingText = document.getElementById('loading');
+        grid.innerHTML = '';  // Clear the grid
+        loadingText.style.display = 'block';
+
+        let x_starting_point = 8890;
+        let y_starting_point = 5755;
+        let elements_per_row = 8;
+        let row_count = 4;
+
+        let x = x_starting_point;
+        let y = y_starting_point;
+
+        // Create 12 requests, one for each image
+        for (let i = 0; i < row_count * elements_per_row; i++) {
+            try {
+                const imageData = await fetchImage(x++, y);  // Fetch one image
+                const imgElement = document.createElement('img');
+
+                if (x === x_starting_point + elements_per_row) {
+                    x = x_starting_point;
+                    y++;
+                }
+
+                imgElement.src = imageData;
+
+                const gridItem = document.createElement('div');
+
+                gridItem.classList.add('grid-item');
+                gridItem.appendChild(imgElement);
+
+                grid.appendChild(gridItem);
+            } catch (error) {
+                console.error('Error fetching image:', error);
+            }
+        }
+
+        loadingText.style.display = 'none';  // Hide loading message after fetching
+        button = document.getElementById('button');
+        button.style.display = 'none';
+    }
+
+    // Function to fetch a single image and return it as a base64 data URL
+    async function fetchImage(x, y) {
+        let url = apiUrl.concat(x, "/", y, ".png?layers=water,residential,commercial,education,industrial,vineyard,grass,meadow,flowerbed,cemetery,garden,park,greenfield,pitch,stadium,sports_centre,track,forest,wood,farmland,farmyard,motorway,trunk,road,secondary,primary,railway,building,recreation_ground,village_green,garages,playground");
+        console.log(url);
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch image');
+        }
+
+        const blob = await response.blob();  // Get the image as a Blob
+        return convertBlobToBase64(blob);    // Convert Blob to base64 string
+    }
+
+    // Function to convert a Blob to a base64 data URL
+    function convertBlobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+</script>
+
+</body>
+</html>
