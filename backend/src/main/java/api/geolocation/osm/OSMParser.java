@@ -62,7 +62,6 @@ public class OSMParser {
 
     private void parseNodes(NodeList nodes, long count) {
         int nodeAmenitiesCount = 0;
-        int nodeRoadsCount = 0;
         int nodeTotalCount = 0;
 
         for (int i = 0; i < count; i++) {
