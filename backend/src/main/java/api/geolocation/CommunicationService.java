@@ -1,8 +1,6 @@
 package api.geolocation;
 
-import api.geolocation.datamodels.AmenityModel;
-import api.geolocation.datamodels.Node;
-import api.geolocation.datamodels.RoadModel;
+import api.geolocation.datamodels.*;
 import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
 import org.geotools.geometry.jts.JTS;
@@ -13,9 +11,7 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import javax.imageio.ImageIO;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class CommunicationService extends CommunicationServiceGrpc.CommunicationServiceImplBase {
     private MathTransform transform = null;
@@ -24,75 +20,44 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
     private final DataStore dataStore = DataStore.getInstance();
 
     @Override
-    public void getAmenities(AmenitiesRequest request, StreamObserver<AmenitiesResponse> observer) {
+    public void getAmenitiesByBBOX(AmenitiesByBBOXRequest request, StreamObserver<AmenitiesResponse> observer) {
         MapLogger.backendLogAmenitiesRequest();
 
-        List<AmenityModel> amenitiesFound = new ArrayList<>();
+        Envelope boundingBox = buildBoundingBox(
+                request.getBboxTlX(),
+                request.getBboxTlY(),
+                request.getBboxBrX(),
+                request.getBboxBrY());
+
+        var boundingBoxPolygon = DataStore.geometryFactory.toGeometry(boundingBox);
 
         var responseBuilder = AmenitiesResponse.newBuilder();
+        for (var entry : dataStore.getAmenities().entrySet()) {
+            AmenityModel amenityModel = entry.getValue();
 
-        if (request.getBboxTlX() == 0 && request.getBboxTlY() == 0 &&
-            request.getBboxBrX() == 0 && request.getBboxBrY() == 0) {
             try {
-                Node nodeFromParameters = new Node();
+                Geometry geometry = amenityModel.getGeometry();
 
-                nodeFromParameters.setLon(request.getPointX());
-                nodeFromParameters.setLat(request.getPointY());
+                if (geometry == null || !boundingBoxPolygon.intersects(geometry)) continue;
 
-                Geometry geometryPoint = JTS.transform(nodeFromParameters.toGeometry(), getMathTransform());
-
-                for (var entry : dataStore.getAmenities().entrySet()) {
-                    var amenityModel = entry.getValue();
-                    try {
-                        var transformedGeometry = JTS.transform(amenityModel.getGeometry(), getMathTransform());
-
-                        var distanceInMeters = transformedGeometry.distance(geometryPoint);
-
-                        if (distanceInMeters <= request.getPointD()) {
-                            System.out.println(distanceInMeters);
-                            checkAmenityParameter(request, amenityModel, "amenity", amenitiesFound);
-                        }
-                    }
-                    catch (Exception ex) {
-                        ex.printStackTrace(System.out);
-                    }
+                String amenityType = request.getAmenity();
+                if (amenityType.isEmpty()) {
+                    // If amenity type not specified -> add all
+                    responseBuilder.addAmenities(buildResponseAmenity(amenityModel));
+                } else if (amenityModel.getTags().get(amenityType).equals(amenityType)) {
+                    // If amenity type specified -> add only those with matching tags
+                    responseBuilder.addAmenities(buildResponseAmenity(amenityModel));
                 }
             }
             catch (Exception ex) {
                 ex.printStackTrace(System.out);
             }
         }
-        else {
-            Envelope boundingBox = buildBoundingBox(
-                    request.getBboxTlX(),
-                    request.getBboxTlY(),
-                    request.getBboxBrX(),
-                    request.getBboxBrY());
 
-            var boundingBoxPolygon = DataStore.geometryFactory.toGeometry(boundingBox);
-
-            for (var entry : dataStore.getAmenities().entrySet()) {
-                AmenityModel amenityModel = entry.getValue();
-
-                try {
-                    if (amenityModel.getGeometry() != null && boundingBoxPolygon.intersects(amenityModel.getGeometry())) {
-                        checkAmenityParameter(request, amenityModel, "highway", amenitiesFound);
-                    }
-                }
-                catch (Exception ex) {
-                    ex.printStackTrace(System.out);
-                }
-            }
-        }
-        if (!amenitiesFound.isEmpty()) {
-            responseBuilder.setStatus(Status.Success);
-
-            for (var amenityModel : amenitiesFound) {
-                responseBuilder.addAmenities(buildResponseAmenity(amenityModel));
-            }
-        }else{
+        if (responseBuilder.getAmenitiesList().isEmpty())
             responseBuilder.setStatus(Status.NotFound);
-        }
+        else
+            responseBuilder.setStatus(Status.Success);
 
         var response = responseBuilder.build();
 
@@ -100,13 +65,36 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         observer.onCompleted();
     }
 
-    private static void checkAmenityParameter(AmenitiesRequest request, AmenityModel amenityModel, String amenity, List<AmenityModel> amenitiesFound) {
-        if (!(request.getAmenity().isEmpty())) {
-            if (request.getAmenity().equals(amenityModel.getTags().get(amenity))) {
-                amenitiesFound.add(amenityModel);
+    @Override
+    public void getAmenitiesByPoint(AmenitiesByPointRequest request, StreamObserver<AmenitiesResponse> responseObserver) {
+        MapLogger.backendLogAmenitiesRequest();
+
+        try {
+            Node nodeFromParameters = new Node();
+
+            nodeFromParameters.setLon(request.getPointX());
+            nodeFromParameters.setLat(request.getPointY());
+
+            Geometry geometryPoint = JTS.transform(nodeFromParameters.toGeometry(), getMathTransform());
+
+            for (var entry : dataStore.getAmenities().entrySet()) {
+                var amenityModel = entry.getValue();
+                try {
+                    var transformedGeometry = JTS.transform(amenityModel.getGeometry(), getMathTransform());
+
+                    var distanceInMeters = transformedGeometry.distance(geometryPoint);
+
+                    if (distanceInMeters <= request.getPointD()) {
+                        System.out.println(distanceInMeters);
+                    }
+                }
+                catch (Exception ex) {
+                    ex.printStackTrace(System.out);
+                }
             }
-        } else {
-            amenitiesFound.add(amenityModel);
+        }
+        catch (Exception ex) {
+            ex.printStackTrace(System.out);
         }
     }
 
@@ -120,20 +108,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         var responseBuilder = AmenityResponse.newBuilder();
 
         if (amenityModel != null) {
-            var json = writer.write(amenityModel.getGeometry());
-            var type = "";
-            var name = "";
-
-            if (!amenityModel.getTags().isEmpty()) {
-                type = amenityModel.getTags().getOrDefault("amenity", "");
-                name = amenityModel.getTags().getOrDefault("name", "");
-            }
-
-            responseBuilder.setId(id);
-            responseBuilder.setJson(json);
-            responseBuilder.setType(type);
-            responseBuilder.setName(name);
-            responseBuilder.putAllTags(amenityModel.getTags());
+            responseBuilder.setAmenity(buildResponseAmenity(amenityModel));
             responseBuilder.setStatus(Status.Success);
         }
         else {
@@ -147,12 +122,10 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
     }
 
     @Override
-    public void getRoads(RoadsRequest request, StreamObserver<RoadsResponse> observer) {
+    public void getRoadsByBBOX(RoadsByBBOXRequest request, StreamObserver<RoadsResponse> observer) {
         MapLogger.backendLogRoadsRequest();
 
         var responseBuilder = RoadsResponse.newBuilder();
-
-        var roadsFound = new ArrayList<RoadModel>();
 
         var boundingBox = buildBoundingBox(
                 request.getBboxTlX(),
@@ -166,31 +139,26 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
             RoadModel roadModel = entry.getValue();
 
             try {
-                if (roadModel.getGeometry() != null && boundingBoxPolygon.intersects(roadModel.getGeometry())) {
-                    if (!(request.getRoad().isEmpty())) {
-                        if (request.getRoad().equals(roadModel.getTags().get("highway"))) {
-                            roadsFound.add(roadModel);
-                        }
-                    }
-                    else {
-                        roadsFound.add(roadModel);
-                    }
-                }
+                Geometry geometry = roadModel.getGeometry();
+
+                if (geometry == null || !boundingBoxPolygon.intersects(roadModel.getGeometry())) continue;
+
+                String roadType = request.getRoad();
+
+                if (roadType.isEmpty())
+                    responseBuilder.addRoads(buildResponseRoad(roadModel));
+                else if (request.getRoad().equals(roadModel.getTags().get("highway")))
+                    responseBuilder.addRoads(buildResponseRoad(roadModel));
             }
             catch (Exception ex) {
                 ex.printStackTrace(System.out);
             }
         }
 
-        if (!roadsFound.isEmpty()) {
-            for (var roadModel : roadsFound) {
-                responseBuilder.addRoads(buildResponseRoad(roadModel));
-            }
-            responseBuilder.setStatus(Status.Success);
-        }
-        else {
+        if (responseBuilder.getRoadsList().isEmpty())
             responseBuilder.setStatus(Status.NotFound);
-        }
+        else
+            responseBuilder.setStatus(Status.Success);
 
         var response = responseBuilder.build();
 
@@ -204,26 +172,12 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
         MapLogger.backendLogRoadRequest((int) id);
 
-        var road = dataStore.getRoads().get(id);
+        var roadModel = dataStore.getRoads().get(id);
         var responseBuilder = RoadResponse.newBuilder();
 
-        if (road != null) {
-            var json = writer.write(road.getGeometry());
-            var type = "";
-            var name = "";
-
-            if (!road.getTags().isEmpty()) {
-                type = road.getTags().get("highway");
-                name = road.getTags().getOrDefault("name", "");
-            }
-
-            responseBuilder.setId(road.getId());
-            responseBuilder.setJson(json);
-            responseBuilder.setType(type);
-            responseBuilder.setName(name);
-            responseBuilder.putAllTags(road.getTags());
+        if (roadModel != null) {
+            responseBuilder.setRoad(buildResponseRoad(roadModel));
             responseBuilder.setStatus(Status.Success);
-            responseBuilder.addAllChildIds(road.getNodeRefs());
         }
         else {
             responseBuilder.setStatus(Status.NotFound);
@@ -282,15 +236,124 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
     @Override
     public void getUsage(UsageRequest request, StreamObserver<UsageResponse> observer) {
+        double bbox_tl_x = request.getBboxTlX();
+        double bbox_tl_y = request.getBboxTlY();
+        double bbox_br_x = request.getBboxBrX();
+        double bbox_br_y = request.getBboxBrY();
+
+        Envelope BBOX = new Envelope(bbox_tl_x,bbox_br_x,bbox_tl_y,bbox_br_y);
+        var bboxGeometry = DataStore.geometryFactory.toGeometry(BBOX);
+
+        // apply math transform
+        bboxGeometry = applyMathTransform(bboxGeometry);
+
+        // this maps landuse (aka usage) type to absolute area of intersection with the bbox
+        Map<String, Double> usageTypeToAbsoluteArea = new HashMap<>();
+
+        List<Way> waysWithLanduse = DataStore.getInstance().getWays().values().stream().parallel()
+                .filter(way -> way.getTags().containsKey("landuse")).toList();
+
+        // check intersection
+        for (var way : waysWithLanduse) {
+            Geometry wayGeometry = applyMathTransform(way.toGeometry());
+
+            Geometry intersection = wayGeometry.intersection(bboxGeometry);
+
+            if (!intersection.isEmpty()) {
+                double intersectionArea = intersection.getArea();
+
+                if (intersectionArea > 0) {
+                    if (usageTypeToAbsoluteArea.containsKey(way.getTags().get("landuse"))) {
+                        // we take out the old value
+                        Double oldLanduseArea = usageTypeToAbsoluteArea.get(way.getTags().get("landuse"));
+
+                        // add the area of the intersection to it
+                        Double totalLanduseArea = oldLanduseArea + intersectionArea;
+
+                        // overwrite the old value in the map with the new total area
+                        usageTypeToAbsoluteArea.put(way.getTags().get("landuse"), totalLanduseArea);
+                    }
+                    else {
+                        usageTypeToAbsoluteArea.put(way.getTags().get("landuse"), intersectionArea);
+                    }
+                }
+            }
+        }
+
+        List<Relation> relationsWithLanduse = dataStore.getRelations().values().stream().parallel()
+                .filter(relation -> relation.getTags().containsKey("landuse")).toList();
+
+        int invalidGeometries = 0;
+
+        for (var relation : relationsWithLanduse) {
+            Geometry relationGeometry = applyMathTransform(relation.toGeometry());
+
+            Geometry intersection = relationGeometry.intersection(bboxGeometry);
+
+            if (!intersection.isEmpty()) {
+                double intersectionArea = intersection.getArea();
+
+                if (intersectionArea > 0) {
+                    if (usageTypeToAbsoluteArea.containsKey(relation.getTags().get("landuse"))) {
+                        // we take out the old value
+                        Double oldLanduseArea = usageTypeToAbsoluteArea.get(relation.getTags().get("landuse"));
+
+                        // add the area of the intersection to it
+                        Double totalLanduseArea = oldLanduseArea + intersectionArea;
+
+                        // overwrite the old value in the map with the new total area
+                        usageTypeToAbsoluteArea.put(relation.getTags().get("landuse"), totalLanduseArea);
+                    }
+                    else {
+                        usageTypeToAbsoluteArea.put(relation.getTags().get("landuse"), intersectionArea);
+                    }
+                }
+            }
+        }
+
+        System.out.println(invalidGeometries);
+
+        Map<String, Double> usageTypeToShareOfBbox = new HashMap<>();
+        double bboxArea = bboxGeometry.getArea();
+
+        for (var usageType : usageTypeToAbsoluteArea.entrySet()) {
+            double share = usageType.getValue() / bboxArea;
+
+            usageTypeToShareOfBbox.put(usageType.getKey(), share);
+        }
+
+        // Step 1: Convert Map to List of Map.Entry
+        List<Map.Entry<String, Double>> entryList = new ArrayList<>(usageTypeToShareOfBbox.entrySet());
+
+        // Step 2: Sort the List by values in ascending order
+        entryList.sort(Comparator.comparingDouble(Map.Entry::getValue));
+
+        // Step 3: Convert to List of Tuples (Key-Value pairs)
+        List<Tuple<String, Double>> sortedTuples = entryList.stream()
+                .map(entry -> new Tuple<>(entry.getKey(), entry.getValue()))
+                .toList();
+
         var responseBuilder = UsageResponse.newBuilder();
+        responseBuilder.setArea(bboxArea);
 
-        var response = responseBuilder.build();
+        for (var entry : sortedTuples) {
+            String type = entry.getFirst();
+            double share = usageTypeToShareOfBbox.get(type);
+            double area = usageTypeToAbsoluteArea.get(type);
 
-        observer.onNext(response);
+            var usageBuilder = Usage.newBuilder();
+            usageBuilder.setArea(area);
+            usageBuilder.setShare(share);
+            usageBuilder.setType(type);
+
+            responseBuilder.addUsages(usageBuilder);
+        }
+
+        observer.onNext(responseBuilder.build());
         observer.onCompleted();
     }
 
-    private Amenity buildResponseAmenity(AmenityModel amenityModel){
+    private Amenity buildResponseAmenity(AmenityModel amenityModel) {
         var amenityBuilder = Amenity.newBuilder();
 
         var json = writer.write(amenityModel.getGeometry());
@@ -311,12 +374,11 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         return amenityBuilder.build();
     }
 
-    private Road buildResponseRoad(RoadModel roadModel){
+    private Road buildResponseRoad(RoadModel roadModel) {
         var roadBuilder = Road.newBuilder();
         var json = writer.write(roadModel.getGeometry());
         var type = "";
         var name = "";
-
 
         if (!roadModel.getTags().isEmpty()) {
             type = roadModel.getTags().get("highway");
@@ -339,7 +401,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
     private MathTransform getMathTransform() {
         try {
             if (transform == null) {
-                CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:4326");
+                CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:4326", true);
                 CoordinateReferenceSystem targetCRS = CRS.decode("EPSG:31256");
 
                 transform = CRS.findMathTransform(sourceCRS, targetCRS, true);
@@ -349,7 +411,15 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         catch (Exception ex) {
             ex.printStackTrace(System.out);
             return null;
+        }
+    }
 
+    private Geometry applyMathTransform(Geometry geometry) {
+        try {
+            return JTS.transform(geometry, getMathTransform());
+        } catch (Exception ex) {
+            ex.printStackTrace(System.out);
+            return geometry;
         }
     }
 }
