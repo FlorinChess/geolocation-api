@@ -41,8 +41,8 @@ public class MapController {
         @RequestParam(defaultValue = "50") int take,
         @RequestParam(defaultValue = "0") int skip) {
         if (bboxTlX != null && bboxTlY != null && bboxBrX != null && bboxBrY != null) {
-            if (!Utilities.latitudeIsValid(bboxTlX) || !Utilities.longitudeIsValid(bboxTlY) ||
-                !Utilities.latitudeIsValid(bboxBrX) || !Utilities.longitudeIsValid(bboxBrY)) {
+            if (!Utilities.isLatitudeValid(bboxTlX) || !Utilities.isLongitudeValid(bboxTlY) ||
+                !Utilities.isLatitudeValid(bboxBrX) || !Utilities.isLongitudeValid(bboxBrY)) {
                 throw new InvalidRequestException(Constants.badRequestPointValidCoordinatesInvalid);
             }
 
@@ -68,7 +68,7 @@ public class MapController {
         }
 
         if (pointX != null && pointY != null && pointD != null) {
-            if (!Utilities.latitudeIsValid(pointX) || !Utilities.longitudeIsValid(pointY) || pointD < 0) {
+            if (!Utilities.isLatitudeValid(pointX) || !Utilities.isLongitudeValid(pointY) || pointD < 0) {
                 throw new InvalidRequestException("Bad request: point provided, but coordinates are invalid.");
             }
 
@@ -123,8 +123,8 @@ public class MapController {
         @RequestParam(defaultValue = "50") int take,
         @RequestParam(defaultValue = "0") int skip) {
         if (bboxTlX != null && bboxTlY != null && bboxBrX != null && bboxBrY != null){
-            if (!Utilities.latitudeIsValid(bboxTlX) || !Utilities.longitudeIsValid(bboxTlY) ||
-                !Utilities.latitudeIsValid(bboxBrX) || !Utilities.longitudeIsValid(bboxBrY)){
+            if (!Utilities.isLatitudeValid(bboxTlX) || !Utilities.isLongitudeValid(bboxTlY) ||
+                !Utilities.isLatitudeValid(bboxBrX) || !Utilities.isLongitudeValid(bboxBrY)){
                 throw new InvalidRequestException("Bad request: coordinates are invalid.");
             }
 
@@ -211,8 +211,8 @@ public class MapController {
             throw new InvalidRequestException("Invalid parameters!");
         }
 
-        if (!Utilities.latitudeIsValid(bboxTlX) || !Utilities.longitudeIsValid(bboxTlY) ||
-            !Utilities.latitudeIsValid(bboxBrX) || !Utilities.longitudeIsValid(bboxBrY)){
+        if (!Utilities.isLatitudeValid(bboxTlX) || !Utilities.isLongitudeValid(bboxTlY) ||
+            !Utilities.isLatitudeValid(bboxBrX) || !Utilities.isLongitudeValid(bboxBrY)){
             throw new InvalidRequestException("Bad request: coordinates are invalid.");
         }
 
@@ -319,14 +319,14 @@ public class MapController {
         AmenityResponse response = MapApplication.stub.getAmenityById(request);
 
         if (response.getStatus() == Status.Success) {
-            JSONObject jsonObjectGeometry = (JSONObject) Utilities.jsonParser.parse(response.getJson());
+            JSONObject jsonObjectGeometry = (JSONObject) Utilities.jsonParser.parse(response.getAmenity().getJson());
 
             amenity = new api.geolocation.datamodels.Amenity();
-            amenity.setId(response.getId());
+            amenity.setId(response.getAmenity().getId());
             amenity.setGeom(jsonObjectGeometry);
-            amenity.setType(response.getType());
-            amenity.setName(response.getName());
-            amenity.setTags(response.getTagsMap());
+            amenity.setType(response.getAmenity().getType());
+            amenity.setName(response.getAmenity().getName());
+            amenity.setTags(response.getAmenity().getTagsMap());
         }
         if(response.getStatus() == Status.NotFound){
             throw new NotFoundException("Error 404: Entity request could not be found.");
@@ -346,15 +346,15 @@ public class MapController {
         RoadResponse response = MapApplication.stub.getRoadById(request);
 
         if (response.getStatus() == Status.Success) {
-            JSONObject jsonObjectGeometry = (JSONObject) Utilities.jsonParser.parse(response.getJson());
+            JSONObject jsonObjectGeometry = (JSONObject) Utilities.jsonParser.parse(response.getRoad().getJson());
 
             road = new api.geolocation.datamodels.Road();
-            road.setId(response.getId());
+            road.setId(response.getRoad().getId());
             road.setGeom(jsonObjectGeometry);
-            road.setType(response.getType());
-            road.setName(response.getName());
-            road.setTags(response.getTagsMap());
-            road.setChild_ids(response.getChildIdsList());
+            road.setType(response.getRoad().getType());
+            road.setName(response.getRoad().getName());
+            road.setTags(response.getRoad().getTagsMap());
+            road.setChild_ids(response.getRoad().getChildIdsList());
         }
         if(response.getStatus() == Status.NotFound){
             throw new NotFoundException("Error 404: Entity request could not be found.");
@@ -375,7 +375,7 @@ public class MapController {
             int take,
             int skip) {
 
-        var requestBuilder = AmenitiesRequest.newBuilder()
+        var requestBuilder = AmenitiesByBBOXRequest.newBuilder()
                 .setBboxTlX(bboxTlX)
                 .setBboxTlY(bboxTlY)
                 .setBboxBrX(bboxBrX)
@@ -386,9 +386,9 @@ public class MapController {
         if (amenity != null)
             requestBuilder.setAmenity(amenity);
 
-        AmenitiesRequest request = requestBuilder.build();
+        AmenitiesByBBOXRequest request = requestBuilder.build();
 
-        AmenitiesResponse response = MapApplication.stub.getAmenities(request);
+        AmenitiesResponse response = MapApplication.stub.getAmenitiesByBBOX(request);
         ArrayList<api.geolocation.datamodels.Amenity> amenitiesList = new ArrayList<>();
 
         if (response.getStatus() == Status.Success) {
@@ -428,8 +428,7 @@ public class MapController {
         int take,
         int skip) {
 
-
-        var requestBuilder = AmenitiesRequest.newBuilder()
+        var requestBuilder = AmenitiesByPointRequest.newBuilder()
                 .setPointX(pointX)
                 .setPointY(pointY)
                 .setPointD(pointD)
@@ -439,9 +438,9 @@ public class MapController {
         if(amenity != null) {
             requestBuilder.setAmenity(amenity);
         }
-        AmenitiesRequest request = requestBuilder.build();
+        AmenitiesByPointRequest request = requestBuilder.build();
 
-        AmenitiesResponse response = MapApplication.stub.getAmenities(request);
+        AmenitiesResponse response = MapApplication.stub.getAmenitiesByPoint(request);
         ArrayList<api.geolocation.datamodels.Amenity> amenitiesList = new ArrayList<>();
 
         if (response.getStatus() == Status.Success) {
@@ -469,7 +468,7 @@ public class MapController {
         int take,
         int skip) {
 
-        var requestBuilder = RoadsRequest.newBuilder()
+        var requestBuilder = RoadsByBBOXRequest.newBuilder()
                 .setBboxTlX(bboxTlX)
                 .setBboxTlY(bboxTlY)
                 .setBboxBrX(bboxBrX)
@@ -483,7 +482,7 @@ public class MapController {
 
         var request = requestBuilder.build();
 
-        RoadsResponse response = MapApplication.stub.getRoads(request);
+        RoadsResponse response = MapApplication.stub.getRoadsByBBOX(request);
         ArrayList<api.geolocation.datamodels.Road> roadsList = new ArrayList<>();
         if (response.getStatus() == Status.Success) {
             for (api.geolocation.Road currentRoad : response.getRoadsList())  {
