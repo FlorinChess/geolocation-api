@@ -23,7 +23,6 @@ public class UsageController {
         if (!Utilities.areBoundingBoxParametersValid(bboxTlX, bboxTlY, bboxBrX, bboxBrY))
             throw new InvalidRequestException("Invalid request: invalid values for latitude/longitude!");
 
-        // static member in MapApplication; we use it to access the gRPC functions
         var request = UsageRequest.newBuilder()
                 .setBboxTlX(bboxTlX)
                 .setBboxTlY(bboxTlY)
