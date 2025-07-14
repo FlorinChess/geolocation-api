@@ -3,6 +3,7 @@ package api.geolocation.controllers;
 import api.geolocation.*;
 import api.geolocation.datamodels.PaginatedResult;
 import api.geolocation.datamodels.Paging;
+import api.geolocation.datamodels.Road;
 import api.geolocation.exceptions.InternalIssuesException;
 import api.geolocation.exceptions.InvalidRequestException;
 import api.geolocation.exceptions.NotFoundException;
@@ -17,20 +18,20 @@ import java.util.Comparator;
 import java.util.List;
 
 @RestController
-public class MapController {
-
-    @GetMapping("/roads")
+@RequestMapping("/roads")
+public class RoadController {
+    @GetMapping
     public ResponseEntity<Object> getRoads(
-        @RequestParam(required = false) String road,
-        @RequestParam(required = false, name = "bbox.tl.x") Double bboxTlX,
-        @RequestParam(required = false, name = "bbox.tl.y") Double bboxTlY,
-        @RequestParam(required = false, name = "bbox.br.x") Double bboxBrX,
-        @RequestParam(required = false, name = "bbox.br.y") Double bboxBrY,
-        @RequestParam(defaultValue = "50") int take,
-        @RequestParam(defaultValue = "0") int skip) {
+            @RequestParam(required = false) String road,
+            @RequestParam(required = false, name = "bbox.tl.x") Double bboxTlX,
+            @RequestParam(required = false, name = "bbox.tl.y") Double bboxTlY,
+            @RequestParam(required = false, name = "bbox.br.x") Double bboxBrX,
+            @RequestParam(required = false, name = "bbox.br.y") Double bboxBrY,
+            @RequestParam(defaultValue = "50") int take,
+            @RequestParam(defaultValue = "0") int skip) {
         if (bboxTlX != null && bboxTlY != null && bboxBrX != null && bboxBrY != null){
             if (!Utilities.isLatitudeValid(bboxTlX) || !Utilities.isLongitudeValid(bboxTlY) ||
-                !Utilities.isLatitudeValid(bboxBrX) || !Utilities.isLongitudeValid(bboxBrY)){
+                    !Utilities.isLatitudeValid(bboxBrX) || !Utilities.isLongitudeValid(bboxBrY)){
                 throw new InvalidRequestException("Bad request: coordinates are invalid.");
             }
 
@@ -38,7 +39,7 @@ public class MapController {
 
             roads.sort(Comparator.comparingLong(api.geolocation.datamodels.Road::getId));
 
-            List<api.geolocation.datamodels.Road> toReturn = new ArrayList<>();
+            List<Road> toReturn = new ArrayList<>();
 
             if((take < 0) || (skip < 0)){
                 throw new InternalIssuesException("Take < 0!");
@@ -50,7 +51,7 @@ public class MapController {
                 }
                 toReturn.add(roads.get(i));
             }
-            var response = new PaginatedResult<api.geolocation.datamodels.Road>(new Paging(skip, take, roads.size()));
+            var response = new PaginatedResult<Road>(new Paging(skip, take, roads.size()));
             response.setEntries(toReturn);
 
             return ResponseEntity.ok(response);
@@ -59,7 +60,7 @@ public class MapController {
         throw new InvalidRequestException("Bad request: invalid query parameters.");
     }
 
-    @GetMapping("/roads/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<Object> getRoadsById(@PathVariable long id) {
         api.geolocation.datamodels.Road road = loadRoadById(id);
         if (road == null) {
@@ -71,7 +72,7 @@ public class MapController {
     }
 
     @SneakyThrows
-    public api.geolocation.datamodels.Road loadRoadById(long id) {
+    private api.geolocation.datamodels.Road loadRoadById(long id) {
         api.geolocation.datamodels.Road road = null;
 
         RoadByIdRequest request = RoadByIdRequest.newBuilder().setId(id).build();
@@ -99,14 +100,11 @@ public class MapController {
     }
 
     @SneakyThrows
-    public List<api.geolocation.datamodels.Road> loadRoads (
-        String road,
-        double bboxTlX,
-        double bboxTlY,
-        double bboxBrX,
-        double bboxBrY,
-        int take,
-        int skip) {
+    private List<api.geolocation.datamodels.Road> loadRoads (
+            String road,
+            double bboxTlX, double bboxTlY,
+            double bboxBrX, double bboxBrY,
+            int take, int skip) {
 
         var requestBuilder = RoadsByBBOXRequest.newBuilder()
                 .setBboxTlX(bboxTlX)
