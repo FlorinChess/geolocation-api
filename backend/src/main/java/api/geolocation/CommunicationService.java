@@ -337,7 +337,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         responseBuilder.setArea(bboxArea);
 
         for (var entry : sortedTuples) {
-            String type = entry.getFirst();
+            String type = entry.first();
             double share = usageTypeToShareOfBbox.get(type);
             double area = usageTypeToAbsoluteArea.get(type);
 
