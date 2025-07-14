@@ -3,8 +3,6 @@ package api.geolocation.controllers;
 import api.geolocation.*;
 import api.geolocation.datamodels.*;
 import api.geolocation.datamodels.Road;
-import api.geolocation.datamodels.Usage;
-import api.geolocation.datamodels.UsageResponse;
 import api.geolocation.datamodels.PaginatedResult;
 import api.geolocation.datamodels.Paging;
 import api.geolocation.exceptions.InternalIssuesException;
@@ -201,26 +199,6 @@ public class MapController {
         return ResponseEntity.ok(routeResponse);
     }
 
-    @GetMapping("/usage")
-    public ResponseEntity<Object> getUsage(
-        @RequestParam(required = false, name = "bbox.tl.x") Double bboxTlX,
-        @RequestParam(required = false, name = "bbox.tl.y") Double bboxTlY,
-        @RequestParam(required = false, name = "bbox.br.x") Double bboxBrX,
-        @RequestParam(required = false, name = "bbox.br.y") Double bboxBrY) {
-        if (bboxTlX == null || bboxTlY == null || bboxBrX == null || bboxBrY == null) {
-            throw new InvalidRequestException("Invalid parameters!");
-        }
-
-        if (!Utilities.isLatitudeValid(bboxTlX) || !Utilities.isLongitudeValid(bboxTlY) ||
-            !Utilities.isLatitudeValid(bboxBrX) || !Utilities.isLongitudeValid(bboxBrY)){
-            throw new InvalidRequestException("Bad request: coordinates are invalid.");
-        }
-
-        var usageResponse = loadUsage(bboxTlX, bboxTlY, bboxBrX, bboxBrY);
-
-        return ResponseEntity.ok(usageResponse);
-    }
-
     @SneakyThrows
     private RoutingResponse loadRoute(long from, long to, String weighting) {
         var request = RouteRequest.newBuilder()
@@ -254,36 +232,6 @@ public class MapController {
         routeResponse.setLength(response.getLength());
 
         return routeResponse;
-    }
-
-    private UsageResponse loadUsage(double bboxTlX, double bboxTlY, double bboxBrX, double bboxBrY) {
-        var request = UsageRequest.newBuilder()
-                .setBboxTlX(bboxTlX)
-                .setBboxTlY(bboxTlY)
-                .setBboxBrX(bboxBrX)
-                .setBboxBrY(bboxBrY)
-                .build();
-
-        var response = MapApplication.stub.getUsage(request);
-        
-        var usageResponse = new UsageResponse();
-        
-        var usageList = new ArrayList<Usage>();
-
-        for (var usage : response.getUsagesList()) {
-            var newUsage = new Usage();
-
-            newUsage.setType(usage.getType());
-            newUsage.setArea(usage.getArea());
-            newUsage.setShare(usage.getShare());
-
-            usageList.add(newUsage);
-        }
-        
-        usageResponse.setUsages(usageList);
-        usageResponse.setArea(response.getArea());
-
-        return usageResponse;
     }
 
     public ByteString loadTile(int z, int x, int y, String layers) {
