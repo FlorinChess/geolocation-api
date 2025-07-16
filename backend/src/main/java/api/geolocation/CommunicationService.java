@@ -70,19 +70,16 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         MapLogger.backendLogAmenitiesRequest();
 
         try {
-            Node nodeFromParameters = new Node();
+            Geometry point = DataStore.geometryFactory.createPoint(new Coordinate(request.getPointX(), request.getPointY()));
 
-            nodeFromParameters.setLon(request.getPointX());
-            nodeFromParameters.setLat(request.getPointY());
-
-            Geometry geometryPoint = JTS.transform(nodeFromParameters.toGeometry(), getMathTransform());
+            Geometry transformedPoint = applyMathTransform(point);
 
             for (var entry : dataStore.getAmenities().entrySet()) {
                 var amenityModel = entry.getValue();
                 try {
-                    var transformedGeometry = JTS.transform(amenityModel.getGeometry(), getMathTransform());
+                    var transformedAmenityGeometry = applyMathTransform(amenityModel.getGeometry());
 
-                    var distanceInMeters = transformedGeometry.distance(geometryPoint);
+                    var distanceInMeters = transformedAmenityGeometry.distance(transformedPoint);
 
                     if (distanceInMeters <= request.getPointD()) {
                         System.out.println(distanceInMeters);
