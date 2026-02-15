@@ -27,7 +27,7 @@ public class MapServiceServer {
 
         parseOSMFile();
 
-         fixInvalidEntries();
+        fixInvalidEntities();
 
         startServer();
     }
@@ -54,70 +54,16 @@ public class MapServiceServer {
         osmParser.parse();
     }
 
-    private static void fixInvalidEntries() {
+    private static void fixInvalidEntities() {
         DataStore dataStore = DataStore.getInstance();
 
-        // Fetch missing nodes
-        for (Way invalidWay : dataStore.getInvalidWays()) {
-            List<Long> missingNodes = new ArrayList<>(invalidWay.getMissingNodes());
+        fixInvalidWays(dataStore);
 
-            for (long missingNodeId : missingNodes) {
-                if (dataStore.getNodes().containsKey(missingNodeId)) {
-                    System.out.println("Node fetched already! Skipping request...");
-                    continue;
-                }
+//        fixInvalidRelations(dataStore);
+    }
 
-                try {
-                    System.out.println("Querying for id = " + missingNodeId);
-                    JsonNode response = OSMFinder.fetchNode(missingNodeId);
-
-                    if (response.has("elements") && response.get("elements").isArray()) {
-                        for (JsonNode element : response.get("elements")) {
-                            if ("node".equals(element.get("type").asText())) {
-                                Node missingNode = new Node();
-                                missingNode.setId(element.get("id").asLong());
-                                missingNode.setLat(element.get("lat").asDouble());
-                                missingNode.setLon(element.get("lon").asDouble());
-
-                                // Check if the node has tags
-                                if (element.has("tags")) {
-                                    JsonNode tagsNode = element.get("tags");
-                                    Iterator<String> fieldNames = tagsNode.fieldNames();
-                                    while (fieldNames.hasNext()) {
-                                        String key = fieldNames.next();
-                                        String value = tagsNode.get(key).asText();
-                                        missingNode.getTags().put(key, value);
-                                    }
-                                }
-
-                                // Add new node
-                                invalidWay.getNodes().add(missingNode);
-
-                                // Add to all nodes
-                                dataStore.getNodes().put(missingNodeId, missingNode);
-
-                                // remove from missing nodes
-                                invalidWay.getMissingNodes().remove(missingNodeId);
-                                System.out.println("Success!");
-                            }
-                        }
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace(System.out);
-                }
-            }
-
-            if (invalidWay.getMissingNodes().isEmpty()) {
-                // Add to valid ways
-                dataStore.getWays().put(invalidWay.getId(), invalidWay);
-
-                // Set to null for garbage collection
-                invalidWay.setMissingNodes(null);
-            }
-        }
-
-        System.out.println("Finished fixing invalid ways!\nAttempting to fix relations with missing ways...");
-
+    private static void fixInvalidRelations(DataStore dataStore) {
+        System.out.println("Attempting to fix relations with missing ways...");
         // Fetch missing ways
         for (Relation invalidRelation : dataStore.getInvalidRelations()) {
 
@@ -130,7 +76,7 @@ public class MapServiceServer {
                 }
                 else {
                     try {
-                        System.out.println("Querying for id = " + missingMember.getRef());
+                        System.out.println("(Relation missing node) Querying for id = " + missingMember.getRef());
                         JsonNode response = OSMFinder.fetchWay(missingMember.getRef());
 
                         if (response != null && response.has("elements") && response.get("elements").isArray()) {
@@ -152,12 +98,12 @@ public class MapServiceServer {
                                             }
                                             else {
                                                 // Get all missing nodes for the missing way
-                                                System.out.println("Fetching missing node id = " + nodeId);
+                                                System.out.println("(Relation missing node) Fetching missing node id = " + nodeId);
                                                 JsonNode responseNode = OSMFinder.fetchNode(nodeId);
 
                                                 if (responseNode != null && responseNode.has("elements") && responseNode.get("elements").isArray()) {
                                                     for (JsonNode elementNode : responseNode.get("elements")) {
-                                                        if ("node".equals(elementNode.get("type").asText())) {
+                                                        if (elementNode.get("type").asText().equals("node")) {
                                                             Node missingNode = new Node();
                                                             missingNode.setId(elementNode.get("id").asLong());
                                                             missingNode.setLat(elementNode.get("lat").asDouble());
@@ -234,6 +180,68 @@ public class MapServiceServer {
         }
 
         System.out.println("Finished fixing invalid relations!");
+    }
+
+    private static void fixInvalidWays(DataStore dataStore) {
+        for (Way invalidWay : dataStore.getInvalidWays()) {
+            List<Long> missingNodes = new ArrayList<>(invalidWay.getMissingNodes());
+
+            for (long missingNodeId : missingNodes) {
+                if (dataStore.getNodes().containsKey(missingNodeId)) {
+                    System.out.println("Node fetched already! Skipping request...");
+                    continue;
+                }
+
+                try {
+                    System.out.println("(Way missing node) Querying for id = " + missingNodeId);
+                    JsonNode response = OSMFinder.fetchNode(missingNodeId);
+
+                    if (response != null && response.has("elements") && response.get("elements").isArray()) {
+                        for (JsonNode element : response.get("elements")) {
+                            if (element.get("type").asText().equals("node")) {
+                                Node missingNode = new Node();
+                                missingNode.setId(element.get("id").asLong());
+                                missingNode.setLat(element.get("lat").asDouble());
+                                missingNode.setLon(element.get("lon").asDouble());
+
+                                // Check if the node has tags
+                                if (element.has("tags")) {
+                                    JsonNode tagsNode = element.get("tags");
+                                    Iterator<String> fieldNames = tagsNode.fieldNames();
+                                    while (fieldNames.hasNext()) {
+                                        String key = fieldNames.next();
+                                        String value = tagsNode.get(key).asText();
+                                        missingNode.getTags().put(key, value);
+                                    }
+                                }
+
+                                // Add new node
+                                invalidWay.getNodes().add(missingNode);
+
+                                // Add to all nodes
+                                dataStore.getNodes().put(missingNodeId, missingNode);
+
+                                // remove from missing nodes
+                                invalidWay.getMissingNodes().remove(missingNodeId);
+                                System.out.println("Success!");
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace(System.out);
+                }
+            }
+
+            if (invalidWay.getMissingNodes().isEmpty()) {
+                // Add to valid ways
+                dataStore.getWays().put(invalidWay.getId(), invalidWay);
+
+                // Set to null for garbage collection
+                invalidWay.setMissingNodes(null);
+            }
+        }
+
+        System.out.println("Finished fixing invalid ways!");
     }
 
     private static void startServer() {

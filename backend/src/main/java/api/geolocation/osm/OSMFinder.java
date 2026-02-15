@@ -35,8 +35,14 @@ public class OSMFinder {
                 .build()) {
             HttpGet request = new HttpGet(url);
             HttpResponse response = httpClient.execute(request);
-            HttpEntity entity = response.getEntity();
 
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode != 200) {
+                System.out.println("Invalid status code! (" + statusCode + ")");
+                return null;
+            }
+
+            HttpEntity entity = response.getEntity();
             if (entity != null) {
                 ObjectMapper mapper = new ObjectMapper();
                 return mapper.readTree(entity.getContent());
