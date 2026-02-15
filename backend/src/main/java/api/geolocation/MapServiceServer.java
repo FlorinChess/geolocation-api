@@ -57,7 +57,7 @@ public class MapServiceServer {
     private static void fixInvalidEntities() {
         DataStore dataStore = DataStore.getInstance();
 
-        fixInvalidWays(dataStore);
+//        fixInvalidWays(dataStore);
 
 //        fixInvalidRelations(dataStore);
     }
