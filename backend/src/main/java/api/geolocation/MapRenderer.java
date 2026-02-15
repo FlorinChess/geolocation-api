@@ -21,9 +21,9 @@ import java.util.List;
 public class MapRenderer {
 
     private double maxLon;
-    private double maxLat;
+    private double maxLatitude;
     private double minLon;
-    private double minLat;
+    private double minLatitude;
 
     private final int tileSize = 512;
     private final DataStore dataStore = DataStore.getInstance();
@@ -49,12 +49,13 @@ public class MapRenderer {
         g.setColor(Color.WHITE);
         g.fillRect(0,0, image.getWidth(), image.getHeight());
 
-        BoundingBox bbox = tile2boundingBox(x, y, zoom);
+        // create drawing bounding box based on x,y (tile coordinates, not real coordinates) and zoom level
+        BoundingBox bbox = tileToBoundingBox(x, y, zoom);
 
-        maxLat = bbox.north;
+        maxLatitude = bbox.north;
         maxLon = bbox.east;
         minLon = bbox.west;
-        minLat = bbox.south;
+        minLatitude = bbox.south;
 
         List<String> layersArray = new ArrayList<>(List.of(layers.split(",")));
 
@@ -133,8 +134,6 @@ public class MapRenderer {
             }
         }
 
-        image = flipImageCounterClockwise(image);
-
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ImageIO.write(image, "png", outputStream);
         //return outputStream.toByteArray();
@@ -148,7 +147,7 @@ public class MapRenderer {
             case "trunk" -> color = new Color(255, 140, 0);
             case "primary" -> color = new Color(255, 165, 0);
             case "secondary" -> color = new Color(255, 255, 0);
-            case "road" -> color = new Color(128, 128, 128);
+            case "road" -> color = new Color(180, 180, 180);
             case "forest", "wood" -> color = new Color(173, 209, 158);
             case "residential", "garages", "commercial", "industrial" -> color = new Color(223, 233, 233);
             case "vineyard" -> color = new Color(172, 224, 161);
@@ -156,7 +155,7 @@ public class MapRenderer {
             case "pitch", "stadium", "sports_centre", "track" -> color = new Color(150, 227, 196);
             case "farmland", "farmyard" -> color = new Color(250, 231, 147);
             case "cemetery" -> color = new Color(182, 201, 167);
-            case "railway" -> color = new Color(235, 219, 233);
+            case "railway" -> color = new Color(80, 80, 80);
             case "water" -> color = new Color(0, 128, 255);
             case "building" -> color = new Color(189, 146, 123);
             case "education" -> color = new Color(255, 236, 184);
@@ -181,30 +180,41 @@ public class MapRenderer {
         double west;
     }
 
-    private BoundingBox tile2boundingBox(int x, int y, int zoom) {
+    private BoundingBox tileToBoundingBox(int x, int y, int zoom) {
         BoundingBox boundingBox = new BoundingBox();
-        boundingBox.north = tile2lat(y, zoom);
-        boundingBox.south = tile2lat(y + 1, zoom);
-        boundingBox.west = tile2lon(x, zoom);
-        boundingBox.east = tile2lon(x + 1, zoom);
+        boundingBox.north = tileToLatitude(y, zoom);
+        boundingBox.south = tileToLatitude(y + 1, zoom);
+        boundingBox.west = tileToLongitude(x, zoom);
+        boundingBox.east = tileToLongitude(x + 1, zoom);
         return boundingBox;
     }
 
-    static double tile2lon(int x, int z) {
+    static double tileToLongitude(int x, int z) {
         return x / Math.pow(2.0, z) * 360 - 180;
     }
 
-    static double tile2lat(int y, int z) {
+    static double tileToLatitude(int y, int z) {
         double calc = Math.PI - (2.0 * Math.PI * y) / Math.pow(2.0, z);
         return Math.toDegrees(Math.atan(Math.sinh(calc)));
     }
 
-    int transLat(double lat) {
-        return (int)(((lat - minLat) / (maxLat - minLat)) * tileSize);
+    /**
+     * This function converts real-world latitude values to screen Y coordinate.
+     * NOTE: Since screen Y coordinates grow downwards, the conversion is inverted.
+     * @param latitude Real-world latitude value.
+     * @return Screen Y coordinate.
+     */
+    int translateLatitude(double latitude) {
+        return (int)(((maxLatitude - latitude) / (maxLatitude - minLatitude)) * tileSize);
     }
 
-    int transLon(double lon) {
-        return (int)(((lon - minLon) / (maxLon - minLon)) * tileSize);
+    /**
+     * This function converts real-world longitude values to screen Y coordinate.
+     * @param longitude Real-world longitude value.
+     * @return Screen X coordinate
+     */
+    int translateLongitude(double longitude) {
+        return (int)(((longitude - minLon) / (maxLon - minLon)) * tileSize);
     }
 
     private void drawRoad(List<Node> nodes, Color color, Graphics2D g) {
@@ -212,12 +222,13 @@ public class MapRenderer {
             throw new IllegalArgumentException("List of nodes should never be empty or null!");
 
         try {
-
+            // first node
             Node tmpNode = nodes.get(0);
-            Coordinate startCoordinate = new Coordinate(tmpNode.getLat(), tmpNode.getLon());
+            Coordinate startCoordinate = new Coordinate(tmpNode.getLon(), tmpNode.getLat());
 
+            // last node
             tmpNode = nodes.get(nodes.size() - 1);
-            Coordinate endCoordinate = new Coordinate(tmpNode.getLat(), tmpNode.getLon());
+            Coordinate endCoordinate = new Coordinate(tmpNode.getLon(), tmpNode.getLat());
 
             // Closed polygon
             if (startCoordinate.equals(endCoordinate)) {
@@ -227,10 +238,11 @@ public class MapRenderer {
                 return;
             }
 
+            // reset
             startCoordinate = null;
             for (Node node : nodes) {
                 if (node != null) {
-                    Coordinate coordinate = new Coordinate(transLat(node.getLat()), transLon(node.getLon()));
+                    Coordinate coordinate = new Coordinate(translateLongitude(node.getLon()), translateLatitude(node.getLat()));
                     if (startCoordinate != null) {
                         g.setColor(color);
                         g.drawLine((int) startCoordinate.x, (int) startCoordinate.y, (int) coordinate.x, (int) coordinate.y);
@@ -251,10 +263,10 @@ public class MapRenderer {
 
         for (int i = 0; i < nodeList.size(); i++){
             Node node = nodeList.get(i);
-            x[i] = transLon(node.getLon());
-            y[i] = transLat(node.getLat());
+            x[i] = translateLongitude(node.getLon());
+            y[i] = translateLatitude(node.getLat());
         }
-        return new Polygon(y, x ,nodeList.size());
+        return new Polygon(x, y ,nodeList.size());
     }
 
     private void drawRoads(List<Way> ways, Color color, Graphics2D g) {
@@ -283,30 +295,9 @@ public class MapRenderer {
         int[] y = new int[jtsLinearRing.getNumPoints()];
 
         for (int i = 0; i < jtsLinearRing.getNumPoints(); i++){
-            x[i] = transLon(jtsLinearRing.getCoordinates()[i].x);
-            y[i] = transLat(jtsLinearRing.getCoordinates()[i].y);
+            x[i] = translateLongitude(jtsLinearRing.getCoordinates()[i].x);
+            y[i] = translateLatitude(jtsLinearRing.getCoordinates()[i].y);
         }
-        return new Polygon(y, x, jtsLinearRing.getNumPoints());
-    }
-
-    public BufferedImage flipImageCounterClockwise(BufferedImage flipped) {
-        for (int i = 0; i < 3; i++){
-            flipped = flipImage(flipped);
-        }
-        return flipped;
-    }
-
-    public BufferedImage flipImage(BufferedImage image) {
-        BufferedImage flippedImage = new BufferedImage(tileSize, tileSize, image.getType());
-        Graphics2D g2 = flippedImage.createGraphics();
-
-        AffineTransform transform = new AffineTransform();
-        transform.translate(tileSize, 0);
-        transform.rotate(Math.toRadians(90));
-
-        g2.setTransform(transform);
-        g2.drawImage(image, 0, 0, null);
-
-        return flippedImage;
+        return new Polygon(x, y, jtsLinearRing.getNumPoints());
     }
 }
