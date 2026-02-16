@@ -1,0 +1,106 @@
+let menuOpen = true;
+let apiUrl = 'http://localhost:8010/tile/';  // Replace with your API URL
+
+function closeButtonClicked() {
+    if (menuOpen === true) {
+        closeMenu();
+    } else {
+        openMenu();
+    }
+}
+
+function closeMenu() {
+    const menuContainer = document.getElementById("menu-container");
+    const closeButton = document.getElementById("close-button");
+
+    menuContainer.style.transform = `translateX(${closeButton.offsetWidth - menuContainer.offsetWidth + 10}px)`; // +10 to account for margin
+    closeButton.style.transform = `rotate(180deg)`;
+    menuOpen = false;
+}
+
+function openMenu() {
+    const menuContainer = document.getElementById("menu-container");
+    const closeButton = document.getElementById("close-button");
+
+    menuContainer.style.transform = `translateX(0px)`;
+    closeButton.style.transform =  `rotate(0deg)`;
+    menuOpen = true;
+}
+
+async function fetchImages() {
+    // disable fetch button and change its text to indicate loading
+    const button = document.getElementById('search-button');
+    button.innerText = "Loading...";
+    button.disabled = true;
+
+    const grid = document.getElementById('image-grid');
+    grid.innerHTML = '';  // Clear the grid
+
+    let latitude = parseFloat(document.getElementById("latInput").value);
+    let latitude_radians = latitude * Math.PI / 180;
+    let longitude = parseFloat(document.getElementById("lonInput").value);
+    let zoom = parseFloat(document.getElementById("zoomInput").value);
+
+    // compute starting point based on zoom
+
+    // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Java
+    let n = Math.pow(2, zoom);
+
+    // floor to get the integer part
+    let x_starting_tile = Math.floor(n * ((longitude + 180) / 360));
+    let y_starting_tile = Math.floor(n * (1 - (Math.log(Math.tan(latitude_radians) + (1 / Math.cos(latitude_radians))) / Math.PI)) / 2);
+
+
+    let elements_per_row = 8;
+    let row_count = 4;
+
+    // shift the desired position to the center of the window
+    let x = x_starting_tile - 4;
+    let y = y_starting_tile - 1;
+
+    for (let row = 0; row < row_count; row++) {
+        for (let column = 0; column < elements_per_row; column++) {
+            try {
+                const imageData = await fetchImage(x + column, y + row, zoom);  // Fetch one image
+                const imgElement = document.createElement('img');
+
+                imgElement.src = imageData;
+
+                const gridItem = document.createElement('div');
+                gridItem.classList.add('grid-item');
+                gridItem.appendChild(imgElement);
+
+                grid.appendChild(gridItem);
+            } catch (error) {
+                console.error('Error fetching image:', error);
+            }
+        }
+    }
+
+    // reset button
+    button.innerText = "Generate tiles"
+    button.disabled = false;
+}
+
+// Function to fetch a single image and return it as a base64 data URL
+async function fetchImage(x, y, zoom) {
+    let url = apiUrl.concat(zoom, "/", x, "/", y, ".png?layers=water,residential,commercial,education,industrial,vineyard,grass,meadow,flowerbed,cemetery,garden,park,greenfield,pitch,stadium,sports_centre,track,forest,wood,farmland,farmyard,motorway,trunk,road,secondary,primary,railway,building,recreation_ground,village_green,garages,playground");
+    console.log(url);
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error('Failed to fetch image');
+    }
+
+    const blob = await response.blob();  // Get the image as a Blob
+    return convertBlobToBase64(blob);    // Convert Blob to base64 string
+}
+
+// Function to convert a Blob to a base64 data URL
+function convertBlobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
