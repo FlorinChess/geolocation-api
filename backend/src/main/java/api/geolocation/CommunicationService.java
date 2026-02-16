@@ -191,15 +191,8 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         var responseBuilder = TileResponse.newBuilder();
 
         try {
-            var image = mapRenderer.renderTile(request.getZ(), request.getX(), request.getY(), request.getLayers());
-
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            ImageIO.write(image, "png", outputStream);
-            outputStream.flush();
-            byte[] bytes = outputStream.toByteArray();
-            outputStream.close();
-
-            var byteString = ByteString.copyFrom(bytes);
+            var imageOutputStream = mapRenderer.renderTile(request.getZ(), request.getX(), request.getY(), request.getLayers());
+            var byteString = ByteString.copyFrom(imageOutputStream.toByteArray());
 
             responseBuilder.setPng(byteString);
             responseBuilder.setStatus(Status.Success);

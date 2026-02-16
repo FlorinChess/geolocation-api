@@ -3,12 +3,12 @@ package api.geolocation;
 import api.geolocation.datamodels.Node;
 import api.geolocation.datamodels.Relation;
 import api.geolocation.datamodels.Way;
+import org.apache.commons.lang3.tuple.Pair;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.LinearRing;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -34,7 +34,60 @@ public class MapRenderer {
                 "track", "playground", "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
                 "railway", "building");
 
-    public BufferedImage renderTile(int zoom, int x, int y, String layers) throws IOException {
+    private final Map<String, Pair<Color, Integer>> colorsMap = new HashMap<>();
+
+    public MapRenderer() {
+        initializeColorsMap();
+    }
+
+    private void initializeColorsMap() {
+        colorsMap.put("motorway", Pair.of(Color.RED, 3));
+        colorsMap.put("trunk", Pair.of(new Color(255, 140, 0), 2));
+        colorsMap.put("primary", Pair.of(new Color(255, 165, 0), 2));
+        colorsMap.put("secondary", Pair.of(new Color(255, 255, 0), 2));
+        colorsMap.put("road", Pair.of(new Color(180, 180, 180), 2));
+
+        Color forest_wood = new Color(173, 209, 158);
+        colorsMap.put("forest", Pair.of(forest_wood, 1));
+        colorsMap.put("wood", Pair.of(forest_wood, 1));
+
+        Color building_usage = new Color(223, 233, 233);
+        colorsMap.put("garages", Pair.of(building_usage, 1));
+        colorsMap.put("commercial", Pair.of(building_usage, 1));
+        colorsMap.put("industrial", Pair.of(building_usage, 1));
+        colorsMap.put("residential", Pair.of(building_usage, 1));
+
+        colorsMap.put("vineyard", Pair.of(new Color(172,224, 161), 1));
+
+        Color grass = new Color(205, 235, 176);
+        colorsMap.put("grass", Pair.of(grass, 1));
+        colorsMap.put("meadow", Pair.of(grass, 1));
+        colorsMap.put("flowerbed", Pair.of(grass, 1));
+        colorsMap.put("garden", Pair.of(grass, 1));
+        colorsMap.put("park", Pair.of(grass, 1));
+        colorsMap.put("greenfield", Pair.of(grass, 1));
+        colorsMap.put("village_green", Pair.of(grass, 1));
+        colorsMap.put("recreation_ground", Pair.of(grass, 1));
+        colorsMap.put("playground", Pair.of(grass, 1));
+
+        Color sportsFields = new Color(150, 227, 196);
+        colorsMap.put("pitch", Pair.of(sportsFields, 1));
+        colorsMap.put("stadium", Pair.of(sportsFields, 1));
+        colorsMap.put("sports_centre", Pair.of(sportsFields, 1));
+        colorsMap.put("track", Pair.of(sportsFields, 1));
+
+        Color farmland = new Color(250, 231, 147);
+        colorsMap.put("farmland", Pair.of(farmland, 1));
+        colorsMap.put("farmyard", Pair.of(farmland, 1));
+
+        colorsMap.put("cemetery", Pair.of(new Color(182, 201, 167), 1));
+        colorsMap.put("railway", Pair.of(new Color(80, 80, 80), 1));
+        colorsMap.put("water", Pair.of(new Color(0, 128, 255), 1));
+        colorsMap.put("building", Pair.of(new Color(189, 146, 123), 1));
+        colorsMap.put("education", Pair.of(new Color(255, 236, 184), 1));
+    }
+
+    public ByteArrayOutputStream renderTile(int zoom, int x, int y, String layers) throws IOException {
         BufferedImage image = new BufferedImage(tileSize, tileSize, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
 
