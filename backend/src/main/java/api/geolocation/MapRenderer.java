@@ -188,34 +188,19 @@ public class MapRenderer {
         }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        // encode image to PNG and store it in output stream
         ImageIO.write(image, "png", outputStream);
-        //return outputStream.toByteArray();
-        return image;
+        return outputStream;
     }
 
     public Color giveColor(String type) {
-        Color color = Color.WHITE;
-        switch (type) {
-            case "motorway" -> color = new Color(255, 0, 0);
-            case "trunk" -> color = new Color(255, 140, 0);
-            case "primary" -> color = new Color(255, 165, 0);
-            case "secondary" -> color = new Color(255, 255, 0);
-            case "road" -> color = new Color(180, 180, 180);
-            case "forest", "wood" -> color = new Color(173, 209, 158);
-            case "residential", "garages", "commercial", "industrial" -> color = new Color(223, 233, 233);
-            case "vineyard" -> color = new Color(172, 224, 161);
-            case "grass", "meadow", "flowerbed", "garden", "park", "greenfield", "village_green", "recreation_ground", "playground" -> color = new Color(205, 235, 176);
-            case "pitch", "stadium", "sports_centre", "track" -> color = new Color(150, 227, 196);
-            case "farmland", "farmyard" -> color = new Color(250, 231, 147);
-            case "cemetery" -> color = new Color(182, 201, 167);
-            case "railway" -> color = new Color(80, 80, 80);
-            case "water" -> color = new Color(0, 128, 255);
-            case "building" -> color = new Color(189, 146, 123);
-            case "education" -> color = new Color(255, 236, 184);
-            default -> {
-            }
-        }
-        return color;
+        var color = colorsMap.get(type);
+
+        if (color == null)
+            return Color.WHITE;
+        else
+            return color.getLeft();
     }
 
     public boolean isRoad(String type) {
