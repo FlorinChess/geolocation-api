@@ -22,19 +22,7 @@ public class TileController {
             @PathVariable int x,
             @PathVariable int y,
             @RequestParam(required = false) String layers) {
-        var byteString = loadTile(z, x, y, layers);
 
-        byte[] pngBytes = new byte[byteString.size()];
-
-        byteString.copyTo(pngBytes, 0);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.IMAGE_PNG);
-
-        return new ResponseEntity<>(pngBytes, headers, HttpStatus.OK);
-    }
-
-    private ByteString loadTile(int z, int x, int y, String layers) {
         var request = TileRequest.newBuilder()
                 .setZ(z)
                 .setX(x)
@@ -45,17 +33,21 @@ public class TileController {
         var response = MapApplication.stub.getTile(request);
 
         if (response.getStatus() == Status.Success) {
-            return response.getPng();
+            var byteString = response.getPng();
+            byte[] pngBytes = new byte[byteString.size()];
+
+            byteString.copyTo(pngBytes, 0);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_PNG);
+
+            return new ResponseEntity<>(pngBytes, headers, HttpStatus.OK);
         }
 
         if (response.getStatus() == Status.NotFound) {
             throw new NotFoundException("Tile not found");
         }
 
-        if (response.getStatus() == Status.InternalError) {
-            throw new InvalidRequestException("Tile request invalid!");
-        }
-
-        return ByteString.EMPTY;
+        throw new InvalidRequestException("Tile request invalid!");
     }
 }
