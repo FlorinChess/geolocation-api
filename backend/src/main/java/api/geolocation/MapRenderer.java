@@ -31,13 +31,23 @@ public class MapRenderer {
             Arrays.asList(
                 "residential", "garages", "commercial", "industrial", "education", "vineyard", "grass", "meadow", "flowerbed",
                 "village_green", "recreation_ground", "cemetery", "garden", "park", "greenfield", "pitch", "stadium", "sports_centre",
-                "track", "playground", "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "secondary", "primary",
-                "railway", "building");
+                "track", "playground", "forest", "wood", "farmland", "farmyard", "water", "motorway", "trunk", "road", "service", "living_street",
+                "pedestrian", "footway", "tertiary", "secondary", "primary", "railway", "building");
 
     private final Map<String, Pair<Color, Integer>> colorsMap = new HashMap<>();
+    private final Map<Integer, BasicStroke> strokesMap = new HashMap<>();
 
     public MapRenderer() {
         initializeColorsMap();
+
+        initializeStrokesMap();
+    }
+
+    private void initializeStrokesMap() {
+        // railway
+        strokesMap.put(0, new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 0, new float[]{9}, 0));
+        strokesMap.put(1, new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+        strokesMap.put(2, new BasicStroke(2.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
     }
 
     private void initializeColorsMap() {
@@ -45,7 +55,14 @@ public class MapRenderer {
         colorsMap.put("trunk", Pair.of(new Color(255, 140, 0), 2));
         colorsMap.put("primary", Pair.of(new Color(255, 165, 0), 2));
         colorsMap.put("secondary", Pair.of(new Color(255, 255, 0), 2));
-        colorsMap.put("road", Pair.of(new Color(180, 180, 180), 2));
+
+        Color road = new Color(180, 180, 180);
+        colorsMap.put("road", Pair.of(road, 2));
+//        colorsMap.put("footway", Pair.of(road, 2));
+        colorsMap.put("pedestrian", Pair.of(road, 2));
+        colorsMap.put("tertiary", Pair.of(road, 2));
+        colorsMap.put("living_street", Pair.of(road, 1));
+        colorsMap.put("service", Pair.of(road, 1));
 
         Color forest_wood = new Color(173, 209, 158);
         colorsMap.put("forest", Pair.of(forest_wood, 1));
@@ -81,10 +98,11 @@ public class MapRenderer {
         colorsMap.put("farmyard", Pair.of(farmland, 1));
 
         colorsMap.put("cemetery", Pair.of(new Color(182, 201, 167), 1));
-        colorsMap.put("railway", Pair.of(new Color(80, 80, 80), 1));
         colorsMap.put("water", Pair.of(new Color(0, 128, 255), 1));
         colorsMap.put("building", Pair.of(new Color(189, 146, 123), 1));
         colorsMap.put("education", Pair.of(new Color(255, 236, 184), 1));
+        // rail gets a special thickness for dashed line
+        colorsMap.put("railway", Pair.of(new Color(80, 80, 80), 0));
     }
 
     public ByteArrayOutputStream renderTile(int zoom, int x, int y, String layers) throws IOException {
@@ -97,7 +115,7 @@ public class MapRenderer {
 
         var waysMap = dataStore.getWays();
         var relationsMap = dataStore.getRelations();
-        g.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+        g.setStroke(strokesMap.get(2));
 
         g.setColor(Color.WHITE);
         g.fillRect(0,0, image.getWidth(), image.getHeight());
@@ -125,65 +143,51 @@ public class MapRenderer {
             return indexA.compareTo(indexB);
         });
 
-        List<Way> roads = waysMap.values().stream().parallel()
-                .filter(way -> way.getTags().containsKey("highway")).toList();
-
-        List<Relation> landuseRelations = relationsMap.values().stream().parallel()
-                .filter(relation -> relation.getTags().containsKey("landuse")).toList();
-
-        List<Way> landuseWays = waysMap.values().stream().parallel()
-                .filter(way -> way.getTags().containsKey("landuse")).toList();
-
         for (String layer : layersArray) {
             switch (layer) {
                 case "water" -> {
-                    List<Relation> waterRelations = relationsMap.values().stream().parallel()
-                            .filter(relation -> relation.getTags().containsKey("water")).toList();
-
-                    List<Way> waterWays = waysMap.values().stream().parallel()
-                            .filter(way -> way.getTags().containsKey("water")).toList();
-                    drawLands(waterRelations, giveColor(layer), g);
-                    drawRoads(waterWays, giveColor(layer), g);
+                    drawLands(dataStore.getRelationsWithWaterTag().values(), layer, g);
+                    drawRoads(dataStore.getWaysWithWaterTag().values(), layer, g);
                 }
                 case "building" -> {
-                    List<Relation> buildingRelations = relationsMap.values().stream().parallel()
-                            .filter(relation -> relation.getTags().containsKey("building")).toList();
-                    List<Way> buildingWays = waysMap.values().stream().parallel()
-                            .filter(way -> way.getTags().containsKey("building")).toList();
-                    drawLands(buildingRelations, giveColor(layer), g);
-                    drawRoads(buildingWays, giveColor(layer), g);
+                    drawLands(dataStore.getRelationsWithBuildingTag().values(), layer, g);
+                    drawRoads(dataStore.getWaysWithBuildingTag().values(), layer, g);
                 }
                 case "residential", "garages", "education", "industrial", "cemetery", "commercial", "forest", "greenfield",
                      "grass", "meadow", "flowerbed", "vineyard", "farmland", "farmyard", "village_green", "recreation_ground" -> {
-                    List<Way> selectedWays = landuseWays.stream().parallel()
+                    List<Way> selectedWays = dataStore.getWaysWithLanduseTag().values().stream().parallel()
                             .filter(way -> way.getTags().get("landuse").equals(layer)).toList();
-                    List<Relation> selectedRelations = landuseRelations.stream().parallel()
+                    List<Relation> selectedRelations = dataStore.getRelationsWithLanduseTag().values().stream().parallel()
                             .filter(relation -> relation.getTags().get("landuse").equals(layer)).toList();
-                    drawLands(selectedRelations, giveColor(layer), g);
-                    drawRoads(selectedWays, giveColor(layer), g);
+                    drawLands(selectedRelations, layer, g);
+                    drawRoads(selectedWays, layer, g);
                 }
                 case "railway" -> {
-                    List<Way> railways = waysMap.values().stream()
-                            .filter(way -> way.getTags().containsKey("railway")).toList();
-                    drawRoads(railways, giveColor("railway"), g);
+                    drawRoads(dataStore.getWaysWithRailwayTag().values(), layer, g);
                 }
                 case "park", "garden", "pitch", "stadium", "sports_centre", "track", "playground" -> {
-                    List<Way> parks = waysMap.values().stream().parallel()
-                            .filter(way -> way.getTags().containsKey("leisure") && way.getTags().get("leisure").equals(layer)).toList();
-                    drawRoads(parks, giveColor(layer), g);
+                    List<Way> parks = dataStore.getWaysWithLeisureTag().values().stream().parallel()
+                            .filter(way -> way.getTags().get("leisure").equals(layer)).toList();
+                    List<Relation> leisureRelations = dataStore.getRelationsWithLeisureTag().values().stream().parallel()
+                            .filter(relation -> relation.getTags().get("leisure").equals(layer)).toList();
+                    drawRoads(parks, layer, g);
+                    drawLands(leisureRelations, layer, g);
                 }
                 case "wood" -> {
                     List<Way> woods = waysMap.values().stream().parallel()
                             .filter(way -> way.getTags().containsKey("natural") && way.getTags().get("natural").equals(layer)).toList();
-                    drawRoads(woods, giveColor(layer), g);
+                    drawRoads(woods, layer, g);
                 }
-                default -> {
-                    // TODO: Simplify this maybe
-                    List<Way> selectedRoads = roads.stream().parallel()
+                case "motorway", "trunk", "primary", "secondary", "road", "footway", "pedestrian", "service", "tertiary", "living_street" -> {
+                    List<Way> selectedRoads = dataStore.getWaysWithHighwayTag().values().stream().parallel()
                             .filter(way -> way.getTags().get("highway").equals(layer) ||
-                                    (!(isRoad(way.getTags().get("highway"))) && layer.equals("road"))).toList();
-                    drawRoads(selectedRoads, giveColor(layer), g);
+                                    (!isRoad(way.getTags().get("highway")) && layer.equals("road"))).toList();
+                    List<Relation> selectedRelations = dataStore.getRelationsWithHighwayTag().values().stream().parallel()
+                            .filter(relation -> relation.getTags().get("highway").equals(layer)).toList();
+                    drawRoads(selectedRoads, layer, g);
+                    drawLands(selectedRelations, layer, g);
                 }
+                default -> System.out.println("Unknown layer: " + layer);
             }
         }
 
@@ -194,18 +198,13 @@ public class MapRenderer {
         return outputStream;
     }
 
-    public Color giveColor(String type) {
-        var color = colorsMap.get(type);
-
-        if (color == null)
-            return Color.WHITE;
-        else
-            return color.getLeft();
+    public Pair<Color, Integer> getColoring(String type) {
+        return Objects.requireNonNullElseGet(colorsMap.get(type), () -> Pair.of(Color.WHITE, 1));
     }
 
     public boolean isRoad(String type) {
         return switch (type) {
-            case "motorway", "trunk", "primary", "secondary", "water" -> true;
+            case "motorway", "trunk", "primary", "secondary", "tertiary", "living_street", "water", "footway", "pedestrian" -> true;
             default -> false;
         };
     }
@@ -255,7 +254,7 @@ public class MapRenderer {
         return (int)(((longitude - minLon) / (maxLon - minLon)) * tileSize);
     }
 
-    private void drawRoad(List<Node> nodes, Color color, Graphics2D g) {
+    private void drawRoad(List<Node> nodes, Color color, int strokeThickness, Graphics2D g) {
         if (nodes == null || nodes.isEmpty())
             throw new IllegalArgumentException("List of nodes should never be empty or null!");
 
@@ -271,8 +270,7 @@ public class MapRenderer {
             // Closed polygon
             if (startCoordinate.equals(endCoordinate)) {
                 g.setColor(color);
-                g.fill(nodelistToPolygon(nodes));
-                // Seems to help with performance, but some buildings don't show up
+                g.fillPolygon(nodelistToPolygon(nodes));
                 return;
             }
 
@@ -283,6 +281,7 @@ public class MapRenderer {
                     Coordinate coordinate = new Coordinate(translateLongitude(node.getLon()), translateLatitude(node.getLat()));
                     if (startCoordinate != null) {
                         g.setColor(color);
+                        g.setStroke(strokesMap.get(strokeThickness));
                         g.drawLine((int) startCoordinate.x, (int) startCoordinate.y, (int) coordinate.x, (int) coordinate.y);
                     }
                     startCoordinate = coordinate;
@@ -292,7 +291,6 @@ public class MapRenderer {
         catch (Exception ex) {
             ex.printStackTrace(System.out);
         }
-
     }
 
     public Polygon nodelistToPolygon(List<Node> nodeList) {
@@ -307,9 +305,10 @@ public class MapRenderer {
         return new Polygon(x, y ,nodeList.size());
     }
 
-    private void drawRoads(List<Way> ways, Color color, Graphics2D g) {
+    private void drawRoads(Collection<Way> ways, String layer, Graphics2D g) {
+        var coloring = getColoring(layer);
         for (Way way : ways) {
-            drawRoad(way.getNodes(), color, g);
+            drawRoad(way.getNodes(), coloring.getLeft(), coloring.getRight(), g);
         }
     }
 
@@ -322,9 +321,10 @@ public class MapRenderer {
         g.fill(area);
     }
 
-    private void drawLands(List<Relation> relations, Color color, Graphics2D g) {
+    private void drawLands(Collection<Relation> relations, String layer, Graphics2D g) {
+        var color = getColoring(layer);
         for (Relation relation : relations) {
-            drawLand(relation.getInnerLinearRings(), relation.getOuterLinearRings(), color, g);
+            drawLand(relation.getInnerLinearRings(), relation.getOuterLinearRings(), color.getLeft(), g);
         }
     }
 

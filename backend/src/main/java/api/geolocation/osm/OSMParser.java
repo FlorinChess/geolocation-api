@@ -170,11 +170,39 @@ public class OSMParser {
                 if (newWay.getTags().containsKey("highway")) {
                     RoadModel newRoad = new RoadModel(newWay.getId(), geometry, newWay.getTags(), newWay.getNodeIds());
                     dataStore.getRoads().put(newWay.getId(), newRoad);
-
+                    dataStore.getWaysWithHighwayTag().put(newWay.getId(), newWay);
                     wayRoadsCount++;
                 }
 
+                if (newWay.getTags().containsKey("water")) {
+                    dataStore.getWaysWithWaterTag().put(newWay.getId(), newWay);
+                }
+
+                if (newWay.getTags().containsKey("railway")) {
+                    dataStore.getWaysWithRailwayTag().put(newWay.getId(), newWay);
+                }
+
+                // TODO: ways/relations with leisure AND building; building should probably have higher priority
+                if (newWay.getTags().containsKey("building")) {
+                    if (newWay.getTags().containsKey("railway"))
+                        System.out.println("building  + railway id = " + newWay.getId());
+
+                    dataStore.getWaysWithBuildingTag().put(newWay.getId(), newWay);
+                }
+
+                // TODO: add swimming pool https://wiki.openstreetmap.org/wiki/Key:leisure
+                if (newWay.getTags().containsKey("leisure")) {
+                    // only add leisure if it's not already a building to prevent double drawing
+                    if (!newWay.getTags().containsKey("building"))
+                        dataStore.getWaysWithLeisureTag().put(newWay.getId(), newWay);
+                }
+
+                if (newWay.getTags().containsKey("landuse")) {
+                    dataStore.getWaysWithLanduseTag().put(newWay.getId(), newWay);
+                }
+
                 dataStore.getWays().put(newWay.getId(), newWay);
+
                 waysTotalCount++;
             }
             catch (NumberFormatException ex) {
@@ -266,6 +294,29 @@ public class OSMParser {
                     AmenityModel newAmenity = new AmenityModel(newRelation.getId(), geometry, newRelation.getTags());
                     dataStore.getAmenities().put(newRelation.getId(), newAmenity);
                     relationAmenityCount++;
+                }
+
+                if (newRelation.getTags().containsKey("landuse")) {
+                    dataStore.getRelationsWithLanduseTag().put(newRelation.getId(), newRelation);
+                }
+
+                if (newRelation.getTags().containsKey("leisure")) {
+                    if (newRelation.getTags().containsKey("building"))
+                        System.out.println("relation with leisure + building id = " + newRelation.getId());
+
+                    dataStore.getRelationsWithLeisureTag().put(newRelation.getId(), newRelation);
+                }
+
+                if (newRelation.getTags().containsKey("water")) {
+                    dataStore.getRelationsWithWaterTag().put(newRelation.getId(), newRelation);
+                }
+
+                if (newRelation.getTags().containsKey("building")) {
+                    dataStore.getRelationsWithBuildingTag().put(newRelation.getId(), newRelation);
+                }
+
+                if (newRelation.getTags().containsKey("highway")) {
+                    dataStore.getRelationsWithHighwayTag().put(newRelation.getId(), newRelation);
                 }
 
                 dataStore.getRelations().put(newRelation.getId(), newRelation);

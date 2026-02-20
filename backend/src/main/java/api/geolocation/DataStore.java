@@ -15,7 +15,18 @@ public class DataStore {
     private static DataStore instance = null;
     private final Map<Long, Node> nodes;
     private final Map<Long, Way> ways;
+    private final Map<Long, Way> waysWithHighwayTag;
+    private final Map<Long, Way> waysWithWaterTag;
+    private final Map<Long, Way> waysWithRailwayTag;
+    private final Map<Long, Way> waysWithBuildingTag;
+    private final Map<Long, Way> waysWithLeisureTag;
+    private final Map<Long, Way> waysWithLanduseTag;
     private final Map<Long, Relation> relations;
+    private final Map<Long, Relation> relationsWithLanduseTag;
+    private final Map<Long, Relation> relationsWithLeisureTag;
+    private final Map<Long, Relation> relationsWithWaterTag;
+    private final Map<Long, Relation> relationsWithBuildingTag;
+    private final Map<Long, Relation> relationsWithHighwayTag;
     private final Map<Long, AmenityModel> amenities;
     private final Map<Long, RoadModel> roads;
     private final List<Way> invalidWays;
@@ -24,7 +35,18 @@ public class DataStore {
     private DataStore() {
         nodes = new HashMap<>();
         ways = new HashMap<>();
+        waysWithHighwayTag = new HashMap<>();
+        waysWithWaterTag = new HashMap<>();
+        waysWithRailwayTag = new HashMap<>();
+        waysWithBuildingTag = new HashMap<>();
+        waysWithLeisureTag = new HashMap<>();
+        waysWithLanduseTag = new HashMap<>();
         relations = new HashMap<>();
+        relationsWithLanduseTag = new HashMap<>();
+        relationsWithLeisureTag = new HashMap<>();
+        relationsWithWaterTag = new HashMap<>();
+        relationsWithBuildingTag = new HashMap<>();
+        relationsWithHighwayTag = new HashMap<>();
         amenities = new HashMap<>();
         roads = new HashMap<>();
         invalidWays = new ArrayList<>();
