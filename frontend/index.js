@@ -1,6 +1,32 @@
 let menuOpen = true;
 let apiUrl = 'http://localhost:8010/tile/';  // Replace with your API URL
 
+window.onload = async function() {
+    const imageGrid = document.getElementById("image-grid");
+    imageGrid.onwheel = mouseWheelZoom;
+
+    await fetchImages();
+};
+
+function mouseWheelZoom(event) {
+    const zoomInput = document.getElementById("zoomInput");
+    let zoom = parseInt(zoomInput.value);
+
+    // deltaY positive means scroll down -> zoom out
+    if (event.deltaY > 0) {
+        zoom--;
+    } else if (event.deltaY < 0) {
+        zoom++;
+    }
+
+    // if the zoom is between 1 and 18, generate tiles
+    if (0 < zoom && zoom < 19)
+    {
+        zoomInput.value = zoom.toString();
+        fetchImages();
+    }
+}
+
 function closeButtonClicked() {
     if (menuOpen === true) {
         closeMenu();
@@ -36,10 +62,10 @@ async function fetchImages() {
     const grid = document.getElementById('image-grid');
     grid.innerHTML = '';  // Clear the grid
 
-    let latitude = parseFloat(document.getElementById("latInput").value);
-    let latitude_radians = latitude * Math.PI / 180;
-    let longitude = parseFloat(document.getElementById("lonInput").value);
-    let zoom = parseFloat(document.getElementById("zoomInput").value);
+    const latitude = parseFloat(document.getElementById("latInput").value);
+    const latitude_radians = latitude * Math.PI / 180;
+    const longitude = parseFloat(document.getElementById("lonInput").value);
+    const zoom = parseFloat(document.getElementById("zoomInput").value);
 
     // compute starting point based on zoom
 
@@ -84,7 +110,7 @@ async function fetchImages() {
 
 // Function to fetch a single image and return it as a base64 data URL
 async function fetchImage(x, y, zoom) {
-    let url = apiUrl.concat(zoom, "/", x, "/", y, ".png?layers=water,residential,commercial,education,industrial,vineyard,grass,meadow,flowerbed,cemetery,garden,park,greenfield,pitch,stadium,sports_centre,track,forest,wood,farmland,farmyard,motorway,trunk,road,secondary,primary,railway,building,recreation_ground,village_green,garages,playground");
+    const url = apiUrl.concat(zoom, "/", x, "/", y, ".png?layers=service,living_street,tertiary,pedestrian,water,residential,commercial,education,industrial,vineyard,grass,meadow,flowerbed,cemetery,garden,park,greenfield,pitch,stadium,sports_centre,track,forest,wood,farmland,farmyard,motorway,trunk,road,secondary,primary,railway,building,recreation_ground,village_green,garages,playground");
     console.log(url);
     const response = await fetch(url);
     if (!response.ok) {
