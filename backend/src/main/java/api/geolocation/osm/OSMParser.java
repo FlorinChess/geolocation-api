@@ -200,8 +200,12 @@ public class OSMParser {
                 if (newWay.getTags().containsKey("landuse")) {
                     dataStore.getWaysWithLanduseTag().put(newWay.getId(), newWay);
                 }
+                
+                if (newWay.getTags().containsKey("natural")) {
+                    dataStore.getWaysWithNaturalTag().put(newWay.getId(), newWay);
+                }
 
-                dataStore.getWays().put(newWay.getId(), newWay);
+                dataStore.getAllWays().put(newWay.getId(), newWay);
 
                 waysTotalCount++;
             }
@@ -260,7 +264,7 @@ public class OSMParser {
 
                         var refId = newMember.getRef();
 
-                        if (dataStore.getWays().containsKey(refId)) {
+                        if (dataStore.getAllWays().containsKey(refId)) {
                             newRelation.getMembers().add(newMember);
                         }
                         else {
@@ -319,7 +323,7 @@ public class OSMParser {
                     dataStore.getRelationsWithHighwayTag().put(newRelation.getId(), newRelation);
                 }
 
-                dataStore.getRelations().put(newRelation.getId(), newRelation);
+                dataStore.getAllRelations().put(newRelation.getId(), newRelation);
                 relationTotalCount++;
             }
             catch (NumberFormatException ex) {

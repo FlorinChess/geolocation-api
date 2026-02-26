@@ -14,14 +14,15 @@ public class DataStore {
     public static final GeometryFactory geometryFactory = new GeometryFactory();
     private static DataStore instance = null;
     private final Map<Long, Node> nodes;
-    private final Map<Long, Way> ways;
+    private final Map<Long, Way> allWays;
     private final Map<Long, Way> waysWithHighwayTag;
     private final Map<Long, Way> waysWithWaterTag;
     private final Map<Long, Way> waysWithRailwayTag;
     private final Map<Long, Way> waysWithBuildingTag;
     private final Map<Long, Way> waysWithLeisureTag;
     private final Map<Long, Way> waysWithLanduseTag;
-    private final Map<Long, Relation> relations;
+    private final Map<Long, Way> waysWithNaturalTag;
+    private final Map<Long, Relation> allRelations;
     private final Map<Long, Relation> relationsWithLanduseTag;
     private final Map<Long, Relation> relationsWithLeisureTag;
     private final Map<Long, Relation> relationsWithWaterTag;
@@ -34,14 +35,15 @@ public class DataStore {
 
     private DataStore() {
         nodes = new HashMap<>();
-        ways = new HashMap<>();
+        allWays = new HashMap<>();
         waysWithHighwayTag = new HashMap<>();
         waysWithWaterTag = new HashMap<>();
         waysWithRailwayTag = new HashMap<>();
         waysWithBuildingTag = new HashMap<>();
         waysWithLeisureTag = new HashMap<>();
         waysWithLanduseTag = new HashMap<>();
-        relations = new HashMap<>();
+        waysWithNaturalTag = new HashMap<>();
+        allRelations = new HashMap<>();
         relationsWithLanduseTag = new HashMap<>();
         relationsWithLeisureTag = new HashMap<>();
         relationsWithWaterTag = new HashMap<>();

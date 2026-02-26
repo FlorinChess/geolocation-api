@@ -48,6 +48,7 @@ public class MapRenderer {
         strokesMap.put(0, new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 0, new float[]{9}, 0));
         strokesMap.put(1, new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
         strokesMap.put(2, new BasicStroke(2.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+        strokesMap.put(3, new BasicStroke(3.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
     }
 
     private void initializeColorsMap() {
@@ -113,8 +114,6 @@ public class MapRenderer {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-        var waysMap = dataStore.getWays();
-        var relationsMap = dataStore.getRelations();
         g.setStroke(strokesMap.get(2));
 
         g.setColor(Color.WHITE);
@@ -153,7 +152,7 @@ public class MapRenderer {
                     drawLands(dataStore.getRelationsWithBuildingTag().values(), layer, g);
                     drawRoads(dataStore.getWaysWithBuildingTag().values(), layer, g);
                 }
-                case "residential", "garages", "education", "industrial", "cemetery", "commercial", "forest", "greenfield",
+                case "garages", "education", "industrial", "cemetery", "commercial", "forest", "greenfield",
                      "grass", "meadow", "flowerbed", "vineyard", "farmland", "farmyard", "village_green", "recreation_ground" -> {
                     List<Way> selectedWays = dataStore.getWaysWithLanduseTag().values().stream().parallel()
                             .filter(way -> way.getTags().get("landuse").equals(layer)).toList();
@@ -162,6 +161,21 @@ public class MapRenderer {
                     drawLands(selectedRelations, layer, g);
                     drawRoads(selectedWays, layer, g);
                 }
+                case "residential" -> { // can be landuse but also highway
+                    List<Way> residentialLanduse = dataStore.getWaysWithLanduseTag().values().stream().parallel()
+                            .filter(way -> way.getTags().get("landuse").equals(layer)).toList();
+                    List<Way> residentialHighway = dataStore.getWaysWithHighwayTag().values().stream().parallel()
+                            .filter(way -> way.getTags().get("highway").equals(layer)).toList();
+
+                    drawRoads(residentialLanduse, layer, g);
+                    drawRoads(residentialHighway, layer, g);
+                }
+                case "service" -> {
+                    List<Way> residentialHighway = dataStore.getWaysWithHighwayTag().values().stream().parallel()
+                            .filter(way -> way.getTags().get("highway").equals(layer)).toList();
+                    drawRoads(residentialHighway, layer, g);
+                }
+
                 case "railway" -> {
                     drawRoads(dataStore.getWaysWithRailwayTag().values(), layer, g);
                 }
@@ -174,14 +188,13 @@ public class MapRenderer {
                     drawLands(leisureRelations, layer, g);
                 }
                 case "wood" -> {
-                    List<Way> woods = waysMap.values().stream().parallel()
-                            .filter(way -> way.getTags().containsKey("natural") && way.getTags().get("natural").equals(layer)).toList();
+                    List<Way> woods = dataStore.getWaysWithNaturalTag().values().stream().parallel()
+                            .filter(way -> way.getTags().get("natural").equals(layer)).toList();
                     drawRoads(woods, layer, g);
                 }
-                case "motorway", "trunk", "primary", "secondary", "road", "footway", "pedestrian", "service", "tertiary", "living_street" -> {
+                case "motorway", "trunk", "primary", "secondary", "road", "footway", "pedestrian", "tertiary", "living_street" -> {
                     List<Way> selectedRoads = dataStore.getWaysWithHighwayTag().values().stream().parallel()
-                            .filter(way -> way.getTags().get("highway").equals(layer) ||
-                                    (!isRoad(way.getTags().get("highway")) && layer.equals("road"))).toList();
+                            .filter(way -> way.getTags().get("highway").equals(layer)).toList();
                     List<Relation> selectedRelations = dataStore.getRelationsWithHighwayTag().values().stream().parallel()
                             .filter(relation -> relation.getTags().get("highway").equals(layer)).toList();
                     drawRoads(selectedRoads, layer, g);
@@ -200,13 +213,6 @@ public class MapRenderer {
 
     public Pair<Color, Integer> getColoring(String type) {
         return Objects.requireNonNullElseGet(colorsMap.get(type), () -> Pair.of(Color.WHITE, 1));
-    }
-
-    public boolean isRoad(String type) {
-        return switch (type) {
-            case "motorway", "trunk", "primary", "secondary", "tertiary", "living_street", "water", "footway", "pedestrian" -> true;
-            default -> false;
-        };
     }
 
     // sources: https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Java

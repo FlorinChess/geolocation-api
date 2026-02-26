@@ -28,7 +28,7 @@ public class Relation {
         List<LineString> innerLineStrings = new ArrayList<>();
 
         members.forEach(member -> {
-            Way way = DataStore.getInstance().getWays().get(member.getRef());
+            Way way = DataStore.getInstance().getAllWays().get(member.getRef());
             Geometry geometry = way.toGeometry();
 
             switch (member.getRole()) {

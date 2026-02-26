@@ -69,7 +69,7 @@ public class MapServiceServer {
 
             List<Member> missingMembers = new ArrayList<>(invalidRelation.getMissingMembers());
             for (Member missingMember : missingMembers) {
-                if (dataStore.getWays().containsKey(missingMember.getRef())) {
+                if (dataStore.getAllWays().containsKey(missingMember.getRef())) {
                     invalidRelation.getMembers().add(missingMember);
                     invalidRelation.getMissingMembers().remove(missingMember);
                     System.out.println("Missing member added!");
@@ -149,7 +149,7 @@ public class MapServiceServer {
                                     invalidRelation.getMembers().add(missingMember);
 
                                     // Add to all ways
-                                    dataStore.getWays().put(missingWay.getId(), missingWay);
+                                    dataStore.getAllWays().put(missingWay.getId(), missingWay);
 
                                     // remove from missing members of relation
                                     invalidRelation.getMissingMembers().remove(missingMember);
@@ -168,7 +168,7 @@ public class MapServiceServer {
 
                 // Add to valid relations
                 invalidRelation.toGeometry();
-                dataStore.getRelations().put(invalidRelation.getId(), invalidRelation);
+                dataStore.getAllRelations().put(invalidRelation.getId(), invalidRelation);
 
                 // Set to null for garbage collection
                 invalidRelation.setMissingMembers(null);
@@ -234,7 +234,7 @@ public class MapServiceServer {
 
             if (invalidWay.getMissingNodes().isEmpty()) {
                 // Add to valid ways
-                dataStore.getWays().put(invalidWay.getId(), invalidWay);
+                dataStore.getAllWays().put(invalidWay.getId(), invalidWay);
 
                 // Set to null for garbage collection
                 invalidWay.setMissingNodes(null);

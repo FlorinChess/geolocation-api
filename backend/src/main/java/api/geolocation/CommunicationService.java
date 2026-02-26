@@ -9,8 +9,7 @@ import org.locationtech.jts.geom.*;
 import org.locationtech.jts.io.geojson.GeoJsonWriter;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
-import javax.imageio.ImageIO;
-import java.io.ByteArrayOutputStream;
+
 import java.util.*;
 
 public class CommunicationService extends CommunicationServiceGrpc.CommunicationServiceImplBase {
@@ -188,6 +187,8 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
 
     @Override
     public void getTile(TileRequest request, StreamObserver<TileResponse> observer) {
+        long start = System.currentTimeMillis();
+
         var responseBuilder = TileResponse.newBuilder();
 
         try {
@@ -212,6 +213,10 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
                 request.getY(),
                 request.getZ(),
                 Arrays.stream(request.getLayers().split(",")).toList());
+
+        long finish = System.currentTimeMillis();
+        long time = finish - start;
+        System.out.println("Tile request finished in " + time + "ms.");
     }
 
     @Override
@@ -240,7 +245,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
         // this maps landuse (aka usage) type to absolute area of intersection with the bbox
         Map<String, Double> usageTypeToAbsoluteArea = new HashMap<>();
 
-        List<Way> waysWithLanduse = DataStore.getInstance().getWays().values().stream().parallel()
+        List<Way> waysWithLanduse = DataStore.getInstance().getAllWays().values().stream().parallel()
                 .filter(way -> way.getTags().containsKey("landuse")).toList();
 
         // check intersection
@@ -270,7 +275,7 @@ public class CommunicationService extends CommunicationServiceGrpc.Communication
             }
         }
 
-        List<Relation> relationsWithLanduse = dataStore.getRelations().values().stream().parallel()
+        List<Relation> relationsWithLanduse = dataStore.getAllRelations().values().stream().parallel()
                 .filter(relation -> relation.getTags().containsKey("landuse")).toList();
 
         int invalidGeometries = 0;
