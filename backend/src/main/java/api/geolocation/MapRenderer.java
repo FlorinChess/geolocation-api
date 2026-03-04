@@ -25,7 +25,7 @@ public class MapRenderer {
     private double minLon;
     private double minLatitude;
 
-    private final int tileSize = 512;
+    private final int tileSize = 256;
     private final DataStore dataStore = DataStore.getInstance();
     private final List<String> predefinedDrawingOrder =
             Arrays.asList(
