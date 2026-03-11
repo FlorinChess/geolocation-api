@@ -104,7 +104,3 @@ This request returns land usage statistics based on the provided perimeter.
 - [gRPC](https://grpc.io/)
 - [protobuf](https://github.com/protocolbuffers/protobuf)
 - [openstreetmap.org](https://www.openstreetmap.org)
-
-## Disclaimer
-
-This project was built in collaboration with Elena Balent and Michelle Balcos as part of a university course.
