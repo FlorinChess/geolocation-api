@@ -1,13 +1,12 @@
-## Geolocation API
+## Geospatial Data API
 
 RESTful web API developed in Java using Spring Boot and gRPC. This project contains three programs:
 
-`backend`: Java console application that queries data from the openstreetmap database and hosts the gRPC server
+`backend`: Java application that queries data from the openstreetmap database and hosts a gRPC server for providing data to consumers.
 
-`middleware`: Spring Boot web API that forwards data from the backend to the user based on the GET request; returns `.json` responses 
+`middleware`: Spring Boot web API that fetches data from the backend to the user based on the HTTP requests; returns `.json` responses for data requests or `.png` for rendered map tiles.
 
-`frontend`: Static webpage for testing the API endpoints 
-
+`frontend`: Static webpage for testing the API endpoints.
 
 
 ## Features
@@ -17,7 +16,6 @@ RESTful web API developed in Java using Spring Boot and gRPC. This project conta
 - query land usage information with a specified area
 - routing between two specified locations based on specified weighting (length or time)
 - draw tiles for graphical representation of maps
-
 
 
 ## API Endpoints
@@ -80,7 +78,7 @@ This request returns map tiles as 512 x 512 PNG images for a given map segment a
 
 ### `GET /route`
 
-This request generates a route from the node with ID `from` to the node with ID `to`.
+This request generates a route starting from the node with ID `from` to the node with ID `to`.
 
 **Parameters:**
 - `from`: start node ID
@@ -95,7 +93,6 @@ This request returns land usage statistics based on the provided perimeter.
 **Parameters:**
 - `bbox.tl.x`, `bbox.tl.y`: top-left of the bounding box to calculate the usage for
 - `bbox.br.x`, `bbox.br.y`: bottom-right of the bounding box to calculate the usage for
-
 
 
 ## Third-party libraries and APIs
