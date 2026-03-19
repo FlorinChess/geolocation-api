@@ -1,0 +1,13 @@
+.tile {
+    width: 256px;
+    height: 256px;
+    background: lightgray;
+    border: 5px solid #ccc;
+    box-sizing: border-box; /* Important */
+    text-align: center;
+}
+
+.tile img {
+    width: 100%;
+    height: 100%;
+}

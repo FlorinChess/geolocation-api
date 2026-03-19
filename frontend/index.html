@@ -1,34 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Image Grid</title>
-    <link rel="stylesheet" href="index.css" />
-</head>
-<body>
-    <div id="menu-container">
-        <div id="input-container">
-            <div class="input-container-item"><h3 style="display: inline">Coordinates: </h3></div>
-            <div class="input-container-item"><label for="latInput">Latitude  </label><input id="latInput" value="47.071708" /></div>
-            <div class="input-container-item"><label for="lonInput">Longitude </label><input id="lonInput" value="15.438795" /></div>
-            <div class="input-container-item">
-                <label for="zoomInput">Zoom: </label>
-                <input id="zoomInput" type="number" min="0" max="18" value="15" onchange="fetchImages()"/>
-            </div>
-            <div class="input-container-item"><button id="search-button" onclick="fetchImages()">Generate tiles</button></div>
-        </div>
-        <div id="close-button-container">
-            <div id="close-button-ledge">
-                <div style="transform: rotate(180deg)">
-                    <button id="close-button" onclick="closeButtonClicked()">&#5171;</button>
-                </div>
-            </div>
-            <div style="background: transparent; flex: 1"></div>
-        </div>
-    </div>
-    <div id="image-grid"></div>
-    <script src="index.js"></script>
-
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Geospatial Data API</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
